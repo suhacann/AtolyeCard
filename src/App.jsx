@@ -1,4 +1,5 @@
 import ProductList from './components/ProductList.jsx'
+import SiteQrCode from './components/SiteQrCode.jsx'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
+        <SiteQrCode />
         <p>© 2026 Ahşap Atölyesi · Her ürün elde, tek tek üretilir.</p>
       </footer>
     </>

@@ -31,6 +31,8 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - İlk statik HTML sürümü referans için `legacy/index.html` içinde
 - Bileşen yazarken ve webhook gönderirken `atolyekart-standartlari` skill'ine uy
 - GitHub: https://github.com/suhacann/AtolyeCard (public, `main` → `origin/main`)
+- Yayın: https://suhacann.github.io/AtolyeCard/ — `main`'e her push'ta `.github/workflows/deploy.yml` derleyip GitHub Pages'e yükler. `vite.config.js` build'de `base: '/AtolyeCard/'` kullanır
+- QR kod: adres `src/data/site.js` (`SITE_URL`). Sitede footer'daki `SiteQrCode` bileşeni (`qrcode.react`); baskı için `qr/atolyekart-qr.png`, `npm run qr` ile yeniden üretilir. Adres değişirse ikisini birlikte güncelle
 
 ## Durum
 
@@ -39,4 +41,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 1.3: Ürün verisi diziye taşındı (tamam)
 - Hafta 1.3+: "Tükendi" etiketi (tamam)
 - Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
-- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama (tamam). QR kod ve sub-agent sırada
+- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod (tamam). Sub-agent sırada

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+// GitHub Pages siteyi /AtolyeCard/ altında yayınlar; geliştirmede kök adres kalır.
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-})
+  base: command === 'build' ? '/AtolyeCard/' : '/',
+}))
