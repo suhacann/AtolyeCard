@@ -29,6 +29,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Veri kontrolü: `src/data/validateProducts.js` — `ProductList` geliştirme sırasında (`import.meta.env.DEV`) çalıştırır, sorunları konsola `[products.js] ...` uyarısı olarak yazar. Yeni alan eklenirse kontrol de güncellenmeli
 - Stiller tek dosyada: `src/index.css`
 - İlk statik HTML sürümü referans için `legacy/index.html` içinde
+- Bileşen yazarken ve webhook gönderirken `atolyekart-standartlari` skill'ine uy
 
 ## Durum
 
@@ -37,3 +38,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 1.3: Ürün verisi diziye taşındı (tamam)
 - Hafta 1.3+: "Tükendi" etiketi (tamam)
 - Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
+- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit (tamam). GitHub'a bağlama, QR kod ve sub-agent sırada
