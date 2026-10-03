@@ -25,11 +25,12 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - React 19 + Vite. Çalıştırma: `npm run dev` (http://localhost:5173)
 - Bileşenler `src/components/` altında: `ProductList` → `ProductCard` → `ProductImage`
 - Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
-- `ProductCard` tek bir `product` objesi alır; fiyatı kendisi biçimlendirir (hatalı fiyatta "Fiyat yakında"), `inStock: false` ise "Tükendi" etiketi gösterir
+- `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
 - Veri kontrolü: `src/data/validateProducts.js` — `ProductList` geliştirme sırasında (`import.meta.env.DEV`) çalıştırır, sorunları konsola `[products.js] ...` uyarısı olarak yazar. Yeni alan eklenirse kontrol de güncellenmeli
 - Stiller tek dosyada: `src/index.css`
 - İlk statik HTML sürümü referans için `legacy/index.html` içinde
 - Bileşen yazarken ve webhook gönderirken `atolyekart-standartlari` skill'ine uy
+- Denetim: `.claude/agents/standart-denetcisi.md` sub-agent'ı kodu bu skill'e göre okur ve raporlar (dosya değiştirmez). Bileşen/form/webhook değişikliğinden sonra ve commit'ten önce çalıştır
 - GitHub: https://github.com/suhacann/AtolyeCard (public, `main` → `origin/main`)
 - Yayın: https://suhacann.github.io/AtolyeCard/ — `main`'e her push'ta `.github/workflows/deploy.yml` derleyip GitHub Pages'e yükler. `vite.config.js` build'de `base: '/AtolyeCard/'` kullanır
 - QR kod: adres `src/data/site.js` (`SITE_URL`). Sitede footer'daki `SiteQrCode` bileşeni (`qrcode.react`); baskı için `qr/atolyekart-qr.png`, `npm run qr` ile yeniden üretilir. Adres değişirse ikisini birlikte güncelle
@@ -41,4 +42,5 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 1.3: Ürün verisi diziye taşındı (tamam)
 - Hafta 1.3+: "Tükendi" etiketi (tamam)
 - Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
-- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod (tamam). Sub-agent sırada
+- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod; `standart-denetcisi` sub-agent'ı ve ilk denetimin düzeltmeleri (tamam)
+- Açık sorular (denetimden): palet dışı renkler `#c9a67e` (hover kenarlık) ve `#7a6652` (footer); `.product-price` / `.sold-out-badge` sınıf adları `.product-card` önekli olmalı mı; `validateProducts` `description` ve `emoji`'yi kontrol etmiyor
