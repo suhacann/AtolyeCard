@@ -8,11 +8,11 @@ export default function ProductCard({ product }) {
     <article className={inStock ? 'product-card' : 'product-card product-card--sold-out'}>
       <ProductImage product={product} />
       <h3>{name}</h3>
-      <p className="product-price">
+      <p className="product-card__price">
         {formatPrice(price)}
-        {!inStock && <span className="sold-out-badge">Tükendi</span>}
+        {!inStock && <span className="product-card__badge">Tükendi</span>}
       </p>
-      <p className="product-desc">{description}</p>
+      <p className="product-card__description">{description}</p>
     </article>
   )
 }

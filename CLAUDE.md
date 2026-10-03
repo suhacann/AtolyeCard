@@ -43,4 +43,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 1.3+: "Tükendi" etiketi (tamam)
 - Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
 - Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod; `standart-denetcisi` sub-agent'ı ve ilk denetimin düzeltmeleri (tamam)
-- Açık sorular (denetimden): palet dışı renkler `#c9a67e` (hover kenarlık) ve `#7a6652` (footer); `.product-price` / `.sold-out-badge` sınıf adları `.product-card` önekli olmalı mı; `validateProducts` `description` ve `emoji`'yi kontrol etmiyor
+- Denetimin açık soruları kapatıldı: iki ara ton palete eklendi, kart öğe sınıfları BEM (`.product-card__price` vb.), `validateProducts` `description` ve `emoji`'yi de kontrol ediyor (tamam)

@@ -18,6 +18,8 @@ export function validateProducts(products) {
     }
 
     if (!product.name) problems.push(`${label}: name eksik`)
+    if (!product.description) problems.push(`${label}: description eksik`)
+    if (!product.emoji) problems.push(`${label}: emoji eksik`)
 
     if (typeof product.price !== 'number' || !Number.isFinite(product.price)) {
       problems.push(`${label}: price sayı olmalı (şu an: ${JSON.stringify(product.price)})`)
