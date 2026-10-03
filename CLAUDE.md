@@ -23,7 +23,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 ## Teknik yapı
 
 - React 19 + Vite. Çalıştırma: `npm run dev` (http://localhost:5173)
-- Bileşenler `src/components/` altında: `ProductList` → `ProductCard` → `ProductImage`
+- Bileşenler `src/components/` altında: `App` → `ProductList` → `ProductCard` → `ProductImage` + `OrderForm` / `StockNotificationForm`; footer'da `SiteQrCode`. Yardımcılar ve veri `src/data/` altında
 - Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
 - `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
 - Formlar: stoktaki üründe `OrderForm` ("Sipariş Ver"), tükenende `StockNotificationForm` ("Stok Bildirimi İste"). Gönderim `src/data/sendWebhook.js`, payload'lar `src/data/webhookPayloads.js`. webhook.site CORS izni vermediği için `mode: 'no-cors'` (yanıt okunamaz, yalnız ağ hatası yakalanır)
