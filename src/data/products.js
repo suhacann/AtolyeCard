@@ -1,6 +1,6 @@
 // Atölyenin ürün kataloğu. Yeni ürün eklemek için bu diziye bir obje eklemek yeterli.
-// price: ₺ cinsinden sayı (ekranda ProductCard biçimlendirir)
-// inStock: false olan ürünlerde ileride "Stok Bildirimi İste" formu gösterilecek
+// price: ₺ cinsinden sayı (ekranda formatPrice.js biçimlendirir)
+// inStock: true → kartta sipariş formu, false → "Tükendi" etiketi ve "Stok Bildirimi İste" formu
 export const products = [
   {
     id: 'hus-kuksa',

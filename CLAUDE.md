@@ -26,6 +26,8 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Bileşenler `src/components/` altında: `ProductList` → `ProductCard` → `ProductImage`
 - Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
 - `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
+- Formlar: stoktaki üründe `OrderForm` ("Sipariş Ver"), tükenende `StockNotificationForm` ("Stok Bildirimi İste"). Gönderim `src/data/sendWebhook.js`, payload'lar `src/data/webhookPayloads.js`. webhook.site CORS izni vermediği için `mode: 'no-cors'` (yanıt okunamaz, yalnız ağ hatası yakalanır)
+- Webhook adresi yalnızca yerelde: `.env.local` → `VITE_WEBHOOK_URL` (git'e girmez). Tanımsızsa (`isWebhookConfigured` false) formlar gösterilmez; bu yüzden yayındaki sitede formlar bilinçli olarak gizli. Canlıya alma + secret koruma Hafta 2'de
 - Veri kontrolü: `src/data/validateProducts.js` — `ProductList` geliştirme sırasında (`import.meta.env.DEV`) çalıştırır, sorunları konsola `[products.js] ...` uyarısı olarak yazar. Yeni alan eklenirse kontrol de güncellenmeli
 - Stiller tek dosyada: `src/index.css`
 - İlk statik HTML sürümü referans için `legacy/index.html` içinde
@@ -44,3 +46,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
 - Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod; `standart-denetcisi` sub-agent'ı ve ilk denetimin düzeltmeleri (tamam)
 - Denetimin açık soruları kapatıldı: iki ara ton palete eklendi, kart öğe sınıfları BEM (`.product-card__price` vb.), `validateProducts` `description` ve `emoji`'yi de kontrol ediyor (tamam)
+- Hafta 1.6: İki webhook özelliği — sipariş formu + stok bildirimi formu, webhook.site ile tarayıcıdan test edildi, payload'lar sözleşmeye uygun geldi (tamam)

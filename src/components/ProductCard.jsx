@@ -1,5 +1,8 @@
 import ProductImage from './ProductImage.jsx'
+import OrderForm from './OrderForm.jsx'
+import StockNotificationForm from './StockNotificationForm.jsx'
 import { formatPrice } from '../data/formatPrice.js'
+import { isWebhookConfigured } from '../data/sendWebhook.js'
 
 export default function ProductCard({ product }) {
   const { name, price, description, inStock } = product
@@ -13,6 +16,8 @@ export default function ProductCard({ product }) {
         {!inStock && <span className="product-card__badge">Tükendi</span>}
       </p>
       <p className="product-card__description">{description}</p>
+      {isWebhookConfigured &&
+        (inStock ? <OrderForm product={product} /> : <StockNotificationForm product={product} />)}
     </article>
   )
 }
