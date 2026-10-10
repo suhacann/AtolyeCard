@@ -1,33 +1,38 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { forwardWebhook } from './server/forwardWebhook.js'
+import { routes } from './server/handlers.js'
 
-// Geliştirmede /api/webhook'u Vercel fonksiyonuyla aynı kodla sunar.
-// WEBHOOK_URL .env.development.local'dan okunur (VITE_ öneki olmadığı için tarayıcıya gitmez).
-function devWebhookApi(webhookUrl) {
+// Geliştirmede /api/* uç noktalarını Vercel fonksiyonlarıyla aynı kodla (server/handlers.js) sunar.
+// WEBHOOK_URL ve JWT_SECRET .env.development.local'dan okunur (VITE_ öneki olmadığı için tarayıcıya gitmez).
+function devApi(env) {
   return {
-    name: 'atolyekart-dev-webhook-api',
+    name: 'atolyekart-dev-api',
     configureServer(server) {
-      server.middlewares.use('/api/webhook', async (req, res) => {
-        res.setHeader('Content-Type', 'application/json')
-        if (req.method !== 'POST') {
-          res.statusCode = 405
-          return res.end(JSON.stringify({ error: 'Yalnızca POST' }))
-        }
+      for (const [path, handle] of Object.entries(routes)) {
+        server.middlewares.use(path, async (req, res) => {
+          let body = null
+          try {
+            let raw = ''
+            for await (const chunk of req) raw += chunk
+            if (raw) body = JSON.parse(raw)
+          } catch {
+            // body null kalır, forwardWebhook 400 döner
+          }
 
-        let payload = null
-        try {
-          let raw = ''
-          for await (const chunk of req) raw += chunk
-          payload = JSON.parse(raw)
-        } catch {
-          // payload null kalır, forwardWebhook 400 döner
-        }
-
-        const { status, body } = await forwardWebhook(payload, webhookUrl)
-        res.statusCode = status
-        res.end(JSON.stringify(body))
-      })
+          const request = { method: req.method, headers: req.headers, ip: req.socket.remoteAddress, body }
+          let response
+          try {
+            response = await handle(request, env)
+          } catch (error) {
+            console.error(`${path} hata verdi:`, error)
+            response = { status: 500, body: { error: 'Sunucu hatası' } }
+          }
+          res.statusCode = response.status
+          res.setHeader('Content-Type', 'application/json')
+          for (const [name, value] of Object.entries(response.headers ?? {})) res.setHeader(name, value)
+          res.end(JSON.stringify(response.body))
+        })
+      }
     },
   }
 }
@@ -39,7 +44,7 @@ export default defineConfig(({ command, mode }) => {
   const hasApi = command === 'serve' || isVercel
 
   return {
-    plugins: [react(), devWebhookApi(env.WEBHOOK_URL)],
+    plugins: [react(), devApi(env)],
     base: command === 'build' && !isVercel ? '/AtolyeCard/' : '/',
     define: {
       'import.meta.env.VITE_HAS_API': JSON.stringify(String(hasApi)),

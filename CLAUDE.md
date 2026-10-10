@@ -27,7 +27,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
 - `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
 - Formlar: stoktaki üründe `OrderForm` ("Sipariş Ver"), tükenende `StockNotificationForm` ("Stok Bildirimi İste"). Ürünlerin üstünde `CategoryFilter` (kategoriler `src/data/categories.js`). E-posta kuralı `src/data/formRules.js`
-- Webhook: tarayıcı `src/data/sendWebhook.js` ile `POST /api/webhook`'a gönderir (payload'lar `src/data/webhookPayloads.js`). Sunucu tarafı `api/webhook.js` (Vercel fonksiyonu) → `server/forwardWebhook.js`; geliştirmede aynı kodu `vite.config.js`'teki eklenti sunar. Gizli adres `WEBHOOK_URL` (`VITE_` öneki YOK, tarayıcıya girmez): geliştirmede `.env.development.local`, production'da yalnızca Vercel panelinde. Örnek: `.env.example`. GitHub Pages'te `/api` olmadığı için formlar orada gizli
+- Webhook: tarayıcı `src/data/sendWebhook.js` ile `POST /api/webhook`'a gönderir (payload'lar `src/data/webhookPayloads.js`). Sunucu tarafı: `api/*.js` (Vercel fonksiyonları, ince sarmalayıcı) → `server/handlers.js` (`/api/webhook`, `/api/order-token`) → `server/forwardWebhook.js`; geliştirmede aynı `routes`'u `vite.config.js`'teki eklenti sunar. Sipariş JWT ile korunur (`server/orderToken.js`, 15 dk), `/api/webhook` IP başına dakikada 10 istek (`server/rateLimit.js`, bellek içi). Gizli değerler `WEBHOOK_URL` ve `JWT_SECRET` (`VITE_` öneki YOK, tarayıcıya girmez): geliştirmede `.env.development.local`, production'da yalnızca Vercel panelinde. Örnek: `.env.example`. GitHub Pages'te `/api` olmadığı için formlar orada gizli
 - Veri kontrolü: `src/data/validateProducts.js` — `ProductList` geliştirme sırasında (`import.meta.env.DEV`) çalıştırır, sorunları konsola `[products.js] ...` uyarısı olarak yazar. Yeni alan eklenirse kontrol de güncellenmeli
 - Stiller tek dosyada: `src/index.css`
 - İlk statik HTML sürümü referans için `legacy/index.html` içinde
@@ -51,3 +51,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 2.1: Git + worktree — e-posta düzeltmesi main'de, kategori filtresi worktree'de, merge (tamam)
 - Hafta 2.2: Vercel CLI ile deploy (tamam)
 - Hafta 2.3: Webhook secret sunucuya taşındı (`/api/webhook`), dev/prod env ayrı, production değeri Vercel'de; canlıda test edildi (tamam)
+- Hafta 2.4: Sipariş formuna JWT (`/api/order-token`) + `/api/webhook`'a rate limit (10/dk/IP); yerelde ve canlıda test edildi (tamam)

@@ -10,6 +10,7 @@
     "qr": "qrcode -o qr/atolyekart-qr.png -w 1024 -q 4 -e M -d 3b2a1eff -l ffffffff https://suhacann.github.io/AtolyeCard/"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { sendWebhook } from '../data/sendWebhook.js'
+import { fetchOrderToken, sendWebhook } from '../data/sendWebhook.js'
 import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
 import { buildOrderPayload } from '../data/webhookPayloads.js'
 
@@ -21,7 +21,8 @@ export default function OrderForm({ product }) {
     event.preventDefault()
     setStatus('sending')
     try {
-      await sendWebhook(buildOrderPayload(product, form))
+      const token = await fetchOrderToken()
+      await sendWebhook(buildOrderPayload(product, form), token)
       setForm(EMPTY_FORM)
       setStatus('success')
     } catch (error) {

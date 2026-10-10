@@ -32,9 +32,11 @@ description: AtölyeKart projesinin bileşen standartları ve webhook payload fo
 ## 2. Webhook formatı
 
 ### Gönderim
-- Tarayıcı webhook adresini bilmez. Formlar `src/data/sendWebhook.js` → `sendWebhook(payload)` ile sitenin kendi uç noktasına gönderir: `POST /api/webhook`, `Content-Type: application/json`. Yanıt `ok` değilse hata fırlatılır.
-- Uç nokta `api/webhook.js` (Vercel fonksiyonu); asıl iş `server/forwardWebhook.js` içinde. Geliştirmede aynı kodu `vite.config.js`'teki eklenti sunar (`npm run dev` yeterli).
-- Adres sunucuda `WEBHOOK_URL` ortam değişkeninden okunur. **`VITE_` öneki kullanma**: `VITE_` ile başlayan her değer derlenen JS'e açık metin olarak girer.
+- Tarayıcı webhook adresini bilmez. Formlar `src/data/sendWebhook.js` → `sendWebhook(payload, token?)` ile sitenin kendi uç noktasına gönderir: `POST /api/webhook`, `Content-Type: application/json`. Yanıt `ok` değilse hata fırlatılır.
+- Uç noktalar `api/` altında (Vercel fonksiyonları), asıl iş `server/handlers.js` içinde; `api/*.js` yalnızca `toVercelHandler(...)` ile sarar. Geliştirmede aynı `routes`'u `vite.config.js`'teki eklenti sunar (`npm run dev` yeterli). Yeni uç nokta: handler'ı `server/handlers.js`'e yaz, `routes`'a ekle, `api/` altına ince bir dosya aç.
+- **JWT (sipariş):** `OrderForm` göndermeden önce `fetchOrderToken()` ile `GET /api/order-token`'dan token alır ve `sendWebhook(payload, token)` ile `Authorization: Bearer <token>` başlığında gönderir. Sunucu `order_created` isteğini geçerli token olmadan 401 ile reddeder. Token HS256, 15 dk geçerli, `JWT_SECRET` ile imzalanır (`server/orderToken.js`). Stok bildirimi token istemez. Token payload'a girmez; payload sözleşmesi değişmez.
+- **Rate limit:** `/api/webhook` IP başına dakikada 10 istek (`server/rateLimit.js`); fazlası 429 + `Retry-After`. Sayaç bellek içi, sunucu örneği başına.
+- Gizli değerler sunucuda ortam değişkeninden okunur: `WEBHOOK_URL`, `JWT_SECRET`. **`VITE_` öneki kullanma**: `VITE_` ile başlayan her değer derlenen JS'e açık metin olarak girer.
   - Geliştirme: `.env.development.local` (git'e girmez; örnek `.env.example`)
   - Production: yalnızca Vercel paneli → Settings → Environment Variables → Production
 - Sunucu yalnızca sözleşmedeki iki `event`'i ve `source: "atolyekart-web"`'i kabul eder, gerisine 400 döner. Yeni event eklenirse `server/forwardWebhook.js`'teki `ALLOWED_EVENTS` de güncellenmeli.
