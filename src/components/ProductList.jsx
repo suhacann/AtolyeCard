@@ -1,4 +1,7 @@
+import { useState } from 'react'
+import CategoryFilter from './CategoryFilter.jsx'
 import ProductCard from './ProductCard.jsx'
+import { ALL_CATEGORIES } from '../data/categories.js'
 import { products } from '../data/products.js'
 import { validateProducts } from '../data/validateProducts.js'
 
@@ -9,11 +12,17 @@ if (import.meta.env.DEV) {
 }
 
 export default function ProductList() {
+  const [category, setCategory] = useState(ALL_CATEGORIES)
+  const visibleProducts = category === ALL_CATEGORIES ? products : products.filter((product) => product.category === category)
+
   return (
-    <div className="product-list">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
+    <>
+      <CategoryFilter selected={category} onSelect={setCategory} />
+      <div className="product-list">
+        {visibleProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    </>
   )
 }

@@ -1,6 +1,6 @@
 // products.js'deki yazım hatalarını bulur ve her biri için okunabilir bir mesaj döndürür.
 // Geliştirme sırasında ProductList bu mesajları konsola yazar.
-const CATEGORIES = ['kuksa', 'kasik']
+import { CATEGORIES } from './categories.js'
 
 export function validateProducts(products) {
   const problems = []
