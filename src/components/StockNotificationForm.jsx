@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { sendWebhook } from '../data/sendWebhook.js'
+import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
 import { buildStockNotificationPayload } from '../data/webhookPayloads.js'
 
 const EMPTY_FORM = { name: '', email: '' }
@@ -55,7 +56,7 @@ export default function StockNotificationForm({ product }) {
       </div>
       <div className="stock-notification-form__field">
         <label htmlFor={`${id}-email`}>E-posta</label>
-        <input id={`${id}-email`} name="email" type="email" value={form.email} onChange={updateField} required autoComplete="email" />
+        <input id={`${id}-email`} name="email" type="email" pattern={EMAIL_PATTERN} title={EMAIL_HINT} value={form.email} onChange={updateField} required autoComplete="email" />
       </div>
 
       {status === 'error' && (

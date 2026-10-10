@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { sendWebhook } from '../data/sendWebhook.js'
+import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
 import { buildOrderPayload } from '../data/webhookPayloads.js'
 
 const EMPTY_FORM = { name: '', phone: '', email: '', quantity: 1 }
@@ -59,7 +60,7 @@ export default function OrderForm({ product }) {
       </div>
       <div className="order-form__field">
         <label htmlFor={`${id}-email`}>E-posta (isteğe bağlı)</label>
-        <input id={`${id}-email`} name="email" type="email" value={form.email} onChange={updateField} autoComplete="email" />
+        <input id={`${id}-email`} name="email" type="email" pattern={EMAIL_PATTERN} title={EMAIL_HINT} value={form.email} onChange={updateField} autoComplete="email" />
       </div>
       <div className="order-form__field">
         <label htmlFor={`${id}-quantity`}>Adet</label>
