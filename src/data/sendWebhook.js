@@ -1,21 +1,19 @@
 // Sipariş ve stok bildirimi formlarının tek gönderim noktası.
-// webhook.site tarayıcıdan gelen JSON isteklerine CORS izni vermediği için
-// istek Content-Type başlığı olmadan ve 'no-cors' modunda gider; gövde yine JSON metnidir.
-// Bu modda yanıt okunamaz: yalnızca ağ hatası yakalanır (Hafta 1 testi için yeterli).
-const url = import.meta.env.VITE_WEBHOOK_URL
+// İstek sitenin kendi sunucu fonksiyonuna (/api/webhook) gider; gizli webhook adresini
+// yalnızca sunucu bilir (server/forwardWebhook.js). Tarayıcı koduna adres girmez.
+const ENDPOINT = `${import.meta.env.BASE_URL}api/webhook`
 
-// Adres yalnızca yerelde (.env.local) tanımlı. Yayındaki sitede tanımsız olduğu için
-// formlar gösterilmez; ziyaretçi bilgisi herkese açık bir test kutusuna gitmez (Hafta 2'ye kadar).
-export const isWebhookConfigured = Boolean(url)
+// /api yalnızca Vercel'de ve geliştirme sunucusunda var; GitHub Pages statik olduğu için orada formlar gösterilmez.
+export const isWebhookConfigured = import.meta.env.VITE_HAS_API === 'true'
 
 export async function sendWebhook(payload) {
-  if (!url) {
-    throw new Error('VITE_WEBHOOK_URL tanımlı değil (.env.local dosyasına bakın)')
-  }
-
-  await fetch(url, {
+  const response = await fetch(ENDPOINT, {
     method: 'POST',
-    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
+
+  if (!response.ok) {
+    throw new Error(`Sunucu ${response.status} döndü`)
+  }
 }

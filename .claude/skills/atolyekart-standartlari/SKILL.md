@@ -32,11 +32,13 @@ description: AtölyeKart projesinin bileşen standartları ve webhook payload fo
 ## 2. Webhook formatı
 
 ### Gönderim
-- Adres koda yazılmaz, `import.meta.env.VITE_WEBHOOK_URL` ile okunur. Değer proje kökündeki `.env.local` dosyasındadır (git'e girmez).
-- Gönderim tek bir yardımcı fonksiyondan yapılır: `src/data/sendWebhook.js` → `sendWebhook(payload)`.
-- `fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })`.
-- webhook.site tarayıcıdan gelen isteklerde CORS sorunu çıkarırsa `Content-Type` başlığını kaldırıp `mode: 'no-cors'` kullan; Hafta 1 testi için yeterli.
-- Hafta 1'de istek doğrudan tarayıcıdan gider. Secret koruma ve backend/API route Hafta 2'nin konusu, şimdi ekleme.
+- Tarayıcı webhook adresini bilmez. Formlar `src/data/sendWebhook.js` → `sendWebhook(payload)` ile sitenin kendi uç noktasına gönderir: `POST /api/webhook`, `Content-Type: application/json`. Yanıt `ok` değilse hata fırlatılır.
+- Uç nokta `api/webhook.js` (Vercel fonksiyonu); asıl iş `server/forwardWebhook.js` içinde. Geliştirmede aynı kodu `vite.config.js`'teki eklenti sunar (`npm run dev` yeterli).
+- Adres sunucuda `WEBHOOK_URL` ortam değişkeninden okunur. **`VITE_` öneki kullanma**: `VITE_` ile başlayan her değer derlenen JS'e açık metin olarak girer.
+  - Geliştirme: `.env.development.local` (git'e girmez; örnek `.env.example`)
+  - Production: yalnızca Vercel paneli → Settings → Environment Variables → Production
+- Sunucu yalnızca sözleşmedeki iki `event`'i ve `source: "atolyekart-web"`'i kabul eder, gerisine 400 döner. Yeni event eklenirse `server/forwardWebhook.js`'teki `ALLOWED_EVENTS` de güncellenmeli.
+- `/api` yalnızca Vercel'de ve geliştirmede var; GitHub Pages derlemesinde `isWebhookConfigured` false olur ve formlar gösterilmez.
 
 ### Payload sözleşmesi
 Alan adları ve sırası sabittir, başka alan ekleme, hiçbirini atlama.
