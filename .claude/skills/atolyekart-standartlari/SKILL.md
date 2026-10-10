@@ -36,11 +36,13 @@ description: AtölyeKart projesinin bileşen standartları ve webhook payload fo
 - Tarayıcı webhook adresini bilmez. Formlar `src/data/sendWebhook.js` → `sendWebhook(payload, token?)` ile sitenin kendi uç noktasına gönderir: `POST /api/webhook`, `Content-Type: application/json`. Yanıt `ok` değilse hata fırlatılır.
 - Uç noktalar `api/` altında (Vercel fonksiyonları), asıl iş `server/handlers.js` içinde; `api/*.js` yalnızca `toVercelHandler(...)` ile sarar. Geliştirmede aynı `routes`'u `vite.config.js`'teki eklenti sunar (`npm run dev` yeterli). Yeni uç nokta: handler'ı `server/handlers.js`'e yaz, `routes`'a ekle, `api/` altına ince bir dosya aç.
 - **JWT (sipariş):** `OrderForm` göndermeden önce `fetchOrderToken()` ile `GET /api/order-token`'dan token alır ve `sendWebhook(payload, token)` ile `Authorization: Bearer <token>` başlığında gönderir. Sunucu `order_created` isteğini geçerli token olmadan 401 ile reddeder. Token HS256, 15 dk geçerli, `JWT_SECRET` ile imzalanır (`server/orderToken.js`). Stok bildirimi token istemez. Token payload'a girmez; payload sözleşmesi değişmez.
-- **Rate limit:** `/api/webhook` IP başına dakikada 10 istek (`server/rateLimit.js`); fazlası 429 + `Retry-After`. Sayaç bellek içi, sunucu örneği başına.
+- **Rate limit:** `/api/webhook` ve `/api/order-token` IP başına dakikada 10 istek, ayrı sayaçlarla (`server/rateLimit.js`); fazlası 429 + `Retry-After`. Sayaç bellek içi, sunucu örneği başına.
 - Gizli değerler sunucuda ortam değişkeninden okunur: `WEBHOOK_URL`, `JWT_SECRET`. **`VITE_` öneki kullanma**: `VITE_` ile başlayan her değer derlenen JS'e açık metin olarak girer.
   - Geliştirme: `.env.development.local` (git'e girmez; örnek `.env.example`)
   - Production: yalnızca Vercel paneli → Settings → Environment Variables → Production
 - Sunucu yalnızca sözleşmedeki iki `event`'i ve `source: "atolyekart-web"`'i kabul eder, gerisine 400 döner. Yeni event eklenirse `server/forwardWebhook.js`'teki `ALLOWED_EVENTS` de güncellenmeli.
+- **Girdi temizleme:** Webhook'a giden payload tarayıcıdan geleni değil, `server/sanitizePayload.js`'in yeniden kurduğunu taşır: ürün (`productName`, stok durumu) sunucunun `products.js`'inden, metinlerden kontrol karakterleri silinir, fazladan alanlar atılır, payload yine `webhookPayloads.js` builder'larıyla kurulur. Alan kuralları (`EMAIL_PATTERN`, `PHONE_PATTERN`, `MAX_LENGTH`, `MAX_QUANTITY`) tek yerde, `src/data/formRules.js`'te; input'larda `pattern`/`maxLength`/`max` olarak da kullanılır. Desenler tarayıcıda ve sunucuda `v` bayrağıyla derlenir: karakter sınıfında `( ) + -` gibi karakterleri kaçışla yaz.
+- **Güvenlik başlıkları:** `vercel.json` (CSP `'self'`; inline script/style yok). Harici kaynak (font, CDN, analitik) eklenecekse CSP de güncellenmeli.
 - `/api` yalnızca Vercel'de ve geliştirmede var; GitHub Pages derlemesinde `isWebhookConfigured` false olur ve formlar gösterilmez.
 
 ### Payload sözleşmesi

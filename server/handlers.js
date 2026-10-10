@@ -6,14 +6,23 @@ import { createOrderToken, verifyOrderToken } from './orderToken.js'
 import { checkRateLimit } from './rateLimit.js'
 
 const methodNotAllowed = (allowed) => ({ status: 405, headers: { Allow: allowed }, body: { error: `Yalnızca ${allowed}` } })
+const tooManyRequests = (retryAfter) => ({
+  status: 429,
+  headers: { 'Retry-After': String(retryAfter) },
+  body: { error: 'Çok fazla istek' },
+})
 const notConfigured = (name) => {
   console.error(`${name} tanımlı değil`)
   return { status: 500, body: { error: 'Sunucu yapılandırılmamış' } }
 }
 
-// GET /api/order-token → { token }
+// GET /api/order-token → { token } — IP başına dakikada 10 istek.
 export async function handleOrderToken(request, env) {
   if (request.method !== 'GET') return methodNotAllowed('GET')
+
+  const limit = checkRateLimit(`order-token:${request.ip}`)
+  if (!limit.allowed) return tooManyRequests(limit.retryAfter)
+
   if (!env.JWT_SECRET) return notConfigured('JWT_SECRET')
 
   return {
@@ -27,10 +36,8 @@ export async function handleOrderToken(request, env) {
 export async function handleWebhook(request, env) {
   if (request.method !== 'POST') return methodNotAllowed('POST')
 
-  const limit = checkRateLimit(request.ip)
-  if (!limit.allowed) {
-    return { status: 429, headers: { 'Retry-After': String(limit.retryAfter) }, body: { error: 'Çok fazla istek' } }
-  }
+  const limit = checkRateLimit(`webhook:${request.ip}`)
+  if (!limit.allowed) return tooManyRequests(limit.retryAfter)
 
   if (request.body?.event === 'order_created') {
     if (!env.JWT_SECRET) return notConfigured('JWT_SECRET')

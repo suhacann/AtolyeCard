@@ -1,6 +1,8 @@
 // Tarayıcıdan gelen form payload'ını gizli webhook adresine iletir.
 // Hem Vercel fonksiyonu (api/webhook.js) hem de geliştirme sunucusu (vite.config.js) bunu kullanır.
 // Adres yalnızca sunucuda okunur; tarayıcıya giden koda hiç girmez.
+import { sanitizePayload } from './sanitizePayload.js'
+
 const ALLOWED_EVENTS = ['order_created', 'stock_notification_requested']
 const SOURCE = 'atolyekart-web'
 
@@ -19,11 +21,16 @@ export async function forwardWebhook(payload, webhookUrl) {
     return { status: 400, body: { error: 'Açık rıza gerekli' } }
   }
 
+  const { payload: cleanPayload, error } = sanitizePayload(payload)
+  if (error) {
+    return { status: 400, body: { error } }
+  }
+
   try {
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cleanPayload),
     })
     if (!response.ok) {
       console.error(`Webhook ${response.status} döndü`)
@@ -31,7 +38,8 @@ export async function forwardWebhook(payload, webhookUrl) {
     }
     return { status: 200, body: { ok: true } }
   } catch (error) {
-    console.error('Webhook isteği başarısız:', error)
+    // Yalnızca hata kodu loglanır; ayrıntıda webhook adresinin host'u geçebilir.
+    console.error('Webhook isteği başarısız:', error.cause?.code ?? error.name)
     return { status: 502, body: { error: 'İletilemedi' } }
   }
 }

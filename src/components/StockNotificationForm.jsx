@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import ConsentCheckbox from './ConsentCheckbox.jsx'
 import { sendWebhook } from '../data/sendWebhook.js'
-import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
+import { EMAIL_HINT, EMAIL_PATTERN, MAX_LENGTH } from '../data/formRules.js'
 import { buildStockNotificationPayload } from '../data/webhookPayloads.js'
 
 const EMPTY_FORM = { name: '', email: '', consent: false }
@@ -20,6 +20,7 @@ export default function StockNotificationForm({ product }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (status === 'sending') return // çift gönderim koruması (buton da devre dışı)
     setStatus('sending')
     try {
       await sendWebhook(buildStockNotificationPayload(product, form))
@@ -53,11 +54,11 @@ export default function StockNotificationForm({ product }) {
     <form className="stock-notification-form" onSubmit={handleSubmit}>
       <div className="stock-notification-form__field">
         <label htmlFor={`${id}-name`}>Adınız</label>
-        <input id={`${id}-name`} name="name" value={form.name} onChange={updateField} required autoComplete="name" />
+        <input id={`${id}-name`} name="name" maxLength={MAX_LENGTH.name} value={form.name} onChange={updateField} required autoComplete="name" />
       </div>
       <div className="stock-notification-form__field">
         <label htmlFor={`${id}-email`}>E-posta</label>
-        <input id={`${id}-email`} name="email" type="email" pattern={EMAIL_PATTERN} title={EMAIL_HINT} value={form.email} onChange={updateField} required autoComplete="email" />
+        <input id={`${id}-email`} name="email" type="email" pattern={EMAIL_PATTERN} title={EMAIL_HINT} maxLength={MAX_LENGTH.email} value={form.email} onChange={updateField} required autoComplete="email" />
       </div>
       <ConsentCheckbox
         id={`${id}-consent`}
