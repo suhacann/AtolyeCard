@@ -12,7 +12,7 @@ Canlı: https://atolyekart-murex.vercel.app · Kontrol tarihi: Ekim 2026
 | 6 | Form girdileri sanitize ediliyor | ✅ | Sunucu `server/sanitizePayload.js`: ürün adı/stok sunucu verisinden, ad ≤80, telefon deseni, e-posta deseni ≤254, adet tam sayı 1–99; kontrol/yön karakterleri silinir; fazladan alanlar atılır; payload yeniden kurulur. Tarayıcıda aynı kurallar `pattern`/`maxLength`/`max`. React çıktıyı zaten kaçışlar. Ek: sipariş JWT ile korunur, `/api/*` IP başına 10 istek/dk |
 | 7 | KVKK rıza checkbox'ı + Privacy Policy yayında | ✅ (taslak) | İki formda zorunlu rıza kutusu; payload'da `consent: true`, sunucu zorunlu tutar. Aydınlatma metni `/#gizlilik`. Veri sorumlusu, bildirim hizmeti ve saklama süresi yer tutucu olarak duruyor; gerçek kullanımdan önce doldurulmalı ve hukukçuya kontrol ettirilmeli (KVKK m. 9, 2024 değişikliği) |
 | 8a | Claude denetimi: kritik bulgu yok | ✅ | `standart-denetcisi` güvenlik taraması: kritik/yüksek bulgu yok. Orta/düşük bulgulardan düzeltilenler: token uç noktasına rate limit, genişletilmiş karakter temizliği, açık event kontrolü, aralıklı sayaç temizliği, loglarda host sızıntısı |
-| 8b | Strix taraması | ⏳ | Henüz yapılmadı (Docker + LLM API anahtarı gerekli) |
+| 8b | Strix taraması | ➖ Atlandı | Docker ve ücretli LLM API anahtarı gerektirdiği için bu turda yapılmadı; yerine 8a'daki Claude güvenlik denetimi yapıldı |
 
 ## Bilinen sınırlar (kabul edildi)
 

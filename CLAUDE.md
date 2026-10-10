@@ -53,4 +53,5 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 2.3: Webhook secret sunucuya taşındı (`/api/webhook`), dev/prod env ayrı, production değeri Vercel'de; canlıda test edildi (tamam)
 - Hafta 2.4: Sipariş formuna JWT (`/api/order-token`) + `/api/webhook`'a rate limit (10/dk/IP); yerelde ve canlıda test edildi (tamam)
 - Hafta 2.5: KVKK açık rıza kutusu (iki formda; payload'da `consent: true`, sunucu zorunlu tutar) + `#gizlilik` aydınlatma metni taslağı. Yer tutucular (veri sorumlusu, bildirim hizmeti, saklama süresi) doldurulmadı
-- Hafta 2.6: Güvenlik checklist'i `docs/guvenlik-checklist.md` — vercel.json güvenlik başlıkları, sunucuda girdi temizleme, npm audit temiz (vercel CLI çıkarıldı), denetim bulguları düzeltildi. Strix taraması bekliyor
+- Hafta 2.6: Güvenlik checklist'i `docs/guvenlik-checklist.md` — vercel.json güvenlik başlıkları, sunucuda girdi temizleme, npm audit temiz (vercel CLI çıkarıldı), denetim bulguları düzeltildi. Strix taraması atlandı (Docker + LLM anahtarı gerektiriyor; kullanıcı kararı)
+- QR kod Vercel adresine çevrildi (`SITE_URL` + `qr/atolyekart-qr.png`)

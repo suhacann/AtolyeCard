@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "qr": "qrcode -o qr/atolyekart-qr.png -w 1024 -q 4 -e M -d 3b2a1eff -l ffffffff https://suhacann.github.io/AtolyeCard/"
+    "qr": "qrcode -o qr/atolyekart-qr.png -w 1024 -q 4 -e M -d 3b2a1eff -l ffffffff https://atolyekart-murex.vercel.app/"
   },
   "dependencies": {
     "jose": "^6.2.12",
