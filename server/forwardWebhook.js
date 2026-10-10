@@ -14,6 +14,11 @@ export async function forwardWebhook(payload, webhookUrl) {
     return { status: 400, body: { error: 'Geçersiz istek' } }
   }
 
+  // KVKK: açık rıza verilmeden gelen kişisel veri iletilmez.
+  if (payload.consent !== true) {
+    return { status: 400, body: { error: 'Açık rıza gerekli' } }
+  }
+
   try {
     const response = await fetch(webhookUrl, {
       method: 'POST',

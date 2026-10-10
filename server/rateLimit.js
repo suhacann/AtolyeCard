@@ -6,9 +6,8 @@ const MAX_REQUESTS = 10
 const hits = new Map() // key -> { count, resetAt }
 
 export function checkRateLimit(key, now = Date.now()) {
-  if (hits.size > 1000) {
-    for (const [k, entry] of hits) if (entry.resetAt <= now) hits.delete(k)
-  }
+  // Süresi dolan kayıtlar her istekte silinir; IP bellekte gereğinden uzun kalmaz (bkz. PrivacyPolicy).
+  for (const [k, entry] of hits) if (entry.resetAt <= now) hits.delete(k)
 
   const entry = hits.get(key)
   if (!entry || entry.resetAt <= now) {

@@ -11,6 +11,7 @@ export function buildOrderPayload(product, form) {
     phone: form.phone.trim(),
     email: form.email.trim(),
     quantity: Math.max(1, Math.floor(Number(form.quantity)) || 1),
+    consent: form.consent === true,
     source: SOURCE,
   }
 }
@@ -22,6 +23,7 @@ export function buildStockNotificationPayload(product, form) {
     productId: product.id,
     productName: product.name,
     email: form.email.trim(),
+    consent: form.consent === true,
     source: SOURCE,
   }
 }

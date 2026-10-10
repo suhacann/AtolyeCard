@@ -23,7 +23,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 ## Teknik yapı
 
 - React 19 + Vite. Çalıştırma: `npm run dev` (http://localhost:5173)
-- Bileşenler `src/components/` altında: `App` → `ProductList` (+ `CategoryFilter`) → `ProductCard` → `ProductImage` + `OrderForm` / `StockNotificationForm`; footer'da `SiteQrCode`. Yardımcılar ve veri `src/data/` altında
+- Bileşenler `src/components/` altında: `App` → `ProductList` (+ `CategoryFilter`) → `ProductCard` → `ProductImage` + `OrderForm` / `StockNotificationForm` (ikisinde de `ConsentCheckbox`); footer'da `SiteQrCode` ve gizlilik bağlantısı. `App`, `#gizlilik` hash'inde katalog yerine `PrivacyPolicy` (KVKK aydınlatma metni taslağı; köşeli parantezli yer tutucular atölye sahibince doldurulacak) gösterir. Yardımcılar ve veri `src/data/` altında
 - Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
 - `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
 - Formlar: stoktaki üründe `OrderForm` ("Sipariş Ver"), tükenende `StockNotificationForm` ("Stok Bildirimi İste"). Ürünlerin üstünde `CategoryFilter` (kategoriler `src/data/categories.js`). E-posta kuralı `src/data/formRules.js`
@@ -52,3 +52,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 2.2: Vercel CLI ile deploy (tamam)
 - Hafta 2.3: Webhook secret sunucuya taşındı (`/api/webhook`), dev/prod env ayrı, production değeri Vercel'de; canlıda test edildi (tamam)
 - Hafta 2.4: Sipariş formuna JWT (`/api/order-token`) + `/api/webhook`'a rate limit (10/dk/IP); yerelde ve canlıda test edildi (tamam)
+- Hafta 2.5: KVKK açık rıza kutusu (iki formda; payload'da `consent: true`, sunucu zorunlu tutar) + `#gizlilik` aydınlatma metni taslağı. Yer tutucular (veri sorumlusu, bildirim hizmeti, saklama süresi) doldurulmadı

@@ -27,6 +27,7 @@ description: AtölyeKart projesinin bileşen standartları ve webhook payload fo
 ### Formlar
 - Kontrollü input (`useState`), her input'un bir `<label>`'ı olur.
 - Gönderim sırasında buton devre dışı ve metni "Gönderiliyor…" olur.
+- Kişisel veri toplayan her formda `ConsentCheckbox` (KVKK açık rıza, `required`) bulunur; metni (children) toplanan verileri, amacı ve rızanın kapsamını söyler (sözleşmeye dayanan işleme için rıza istenmez; siparişte rıza yalnız yurt dışı aktarım içindir), Aydınlatma Metni'ne (`#gizlilik`, `PrivacyPolicy`) bağlantı verir. Toplanan veri ya da amaç değişirse `PrivacyPolicy` de güncellenmeli.
 - Başarıda ekranda Türkçe onay mesajı, hatada "Bir sorun oldu, lütfen tekrar deneyin." gösterilir. Hata sessizce yutulmaz.
 
 ## 2. Webhook formatı
@@ -56,6 +57,7 @@ Alan adları ve sırası sabittir, başka alan ekleme, hiçbirini atlama.
 | `phone` | string | Formdan, zorunlu |
 | `email` | string | Formdan, isteğe bağlı; boşsa `""` |
 | `quantity` | number | Formdan, en az 1, varsayılan 1 |
+| `consent` | boolean | KVKK açık rıza kutusu; her zaman `true` (sunucu `true` olmayanı 400 ile reddeder) |
 | `source` | string | Her zaman `"atolyekart-web"` |
 
 **Stok bildirimi** (`event: "stock_notification_requested"`)
@@ -67,6 +69,7 @@ Alan adları ve sırası sabittir, başka alan ekleme, hiçbirini atlama.
 | `productId` | string | `product.id` |
 | `productName` | string | `product.name` |
 | `email` | string | Formdan, zorunlu |
+| `consent` | boolean | KVKK açık rıza kutusu; her zaman `true` (sunucu `true` olmayanı 400 ile reddeder) |
 | `source` | string | Her zaman `"atolyekart-web"` |
 
 Stok bildirimi formu yalnızca `inStock: false` olan ürünlerde gösterilir; sipariş butonu yalnızca `inStock: true` olanlarda.
@@ -81,6 +84,7 @@ Stok bildirimi formu yalnızca `inStock: false` olan ürünlerde gösterilir; si
   "phone": "05551234567",
   "email": "",
   "quantity": 2,
+  "consent": true,
   "source": "atolyekart-web"
 }
 ```

@@ -1,9 +1,10 @@
 import { useId, useState } from 'react'
+import ConsentCheckbox from './ConsentCheckbox.jsx'
 import { sendWebhook } from '../data/sendWebhook.js'
 import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
 import { buildStockNotificationPayload } from '../data/webhookPayloads.js'
 
-const EMPTY_FORM = { name: '', email: '' }
+const EMPTY_FORM = { name: '', email: '', consent: false }
 
 // Tükenen ürünlerin kartında: "Stok Bildirimi İste" butonu, tıklanınca ad + e-posta formu açılır.
 export default function StockNotificationForm({ product }) {
@@ -13,8 +14,8 @@ export default function StockNotificationForm({ product }) {
   const [status, setStatus] = useState('idle') // idle | sending | success | error
 
   const updateField = (event) => {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
+    const { name, type, value, checked } = event.target
+    setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSubmit = async (event) => {
@@ -58,6 +59,14 @@ export default function StockNotificationForm({ product }) {
         <label htmlFor={`${id}-email`}>E-posta</label>
         <input id={`${id}-email`} name="email" type="email" pattern={EMAIL_PATTERN} title={EMAIL_HINT} value={form.email} onChange={updateField} required autoComplete="email" />
       </div>
+      <ConsentCheckbox
+        id={`${id}-consent`}
+        checked={form.consent}
+        onChange={updateField}
+      >
+        Ad ve e-posta bilgilerimin, ürün yeniden hazır olduğunda bana e-posta gönderilmesi amacıyla işlenmesine ve
+        yurt dışındaki hizmet sağlayıcılara aktarılmasına açık rıza veriyorum.
+      </ConsentCheckbox>
 
       {status === 'error' && (
         <p className="stock-notification-form__message stock-notification-form__message--error" role="alert">

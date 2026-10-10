@@ -1,9 +1,10 @@
 import { useId, useState } from 'react'
+import ConsentCheckbox from './ConsentCheckbox.jsx'
 import { fetchOrderToken, sendWebhook } from '../data/sendWebhook.js'
 import { EMAIL_HINT, EMAIL_PATTERN } from '../data/formRules.js'
 import { buildOrderPayload } from '../data/webhookPayloads.js'
 
-const EMPTY_FORM = { name: '', phone: '', email: '', quantity: 1 }
+const EMPTY_FORM = { name: '', phone: '', email: '', quantity: 1, consent: false }
 
 // Stoktaki ürünlerin kartında: "Sipariş Ver" butonu, tıklanınca sipariş formu açılır.
 export default function OrderForm({ product }) {
@@ -13,8 +14,8 @@ export default function OrderForm({ product }) {
   const [status, setStatus] = useState('idle') // idle | sending | success | error
 
   const updateField = (event) => {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
+    const { name, type, value, checked } = event.target
+    setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSubmit = async (event) => {
@@ -67,6 +68,14 @@ export default function OrderForm({ product }) {
         <label htmlFor={`${id}-quantity`}>Adet</label>
         <input id={`${id}-quantity`} name="quantity" type="number" min="1" value={form.quantity} onChange={updateField} required />
       </div>
+      <ConsentCheckbox
+        id={`${id}-consent`}
+        checked={form.consent}
+        onChange={updateField}
+      >
+        Siparişim için verdiğim ad, telefon ve e-posta bilgilerimin yurt dışındaki hizmet sağlayıcılara aktarılmasına
+        açık rıza veriyorum.
+      </ConsentCheckbox>
 
       {status === 'error' && (
         <p className="order-form__message order-form__message--error" role="alert">

@@ -180,6 +180,36 @@ body {
   font-weight: bold;
 }
 
+.consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #7a6652;
+}
+
+.consent-checkbox input { margin-top: 2px; accent-color: #5a3d28; }
+
+.consent-checkbox a,
+.site-footer a,
+.privacy-policy a { color: #8a5a2b; }
+
+.privacy-policy {
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.privacy-policy h2 { text-align: left; }
+
+.privacy-policy h3 { margin-top: 28px; color: #5a3d28; }
+
+.privacy-policy ul { padding-left: 20px; }
+
+.privacy-policy__updated { color: #7a6652; font-size: 0.85rem; }
+
 .site-footer {
   text-align: center;
   padding: 24px 16px;
