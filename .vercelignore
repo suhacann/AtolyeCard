@@ -1,0 +1,2 @@
+# Web sitesinin derlenmesi için gerekmeyen klasörler (Vercel CLI bunları yüklemez)
+mobile/
