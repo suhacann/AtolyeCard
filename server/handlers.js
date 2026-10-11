@@ -2,7 +2,7 @@
 // Vercel'de server/vercelHandler.js, geliştirmede vite.config.js bu biçime çevirir.
 // env: WEBHOOK_URL ve JWT_SECRET (yalnızca sunucuda).
 import { forwardWebhook } from './forwardWebhook.js'
-import { createOrderToken, verifyOrderToken } from './orderToken.js'
+import { consumeOrderToken, createOrderToken } from './orderToken.js'
 import { checkRateLimit } from './rateLimit.js'
 
 const methodNotAllowed = (allowed) => ({ status: 405, headers: { Allow: allowed }, body: { error: `Yalnızca ${allowed}` } })
@@ -32,7 +32,7 @@ export async function handleOrderToken(request, env) {
   }
 }
 
-// POST /api/webhook — IP başına dakikada 10 istek; sipariş için geçerli JWT gerekir.
+// POST /api/webhook — IP başına dakikada 10 istek; sipariş için geçerli ve kullanılmamış JWT gerekir.
 export async function handleWebhook(request, env) {
   if (request.method !== 'POST') return methodNotAllowed('POST')
 
@@ -42,7 +42,7 @@ export async function handleWebhook(request, env) {
   if (request.body?.event === 'order_created') {
     if (!env.JWT_SECRET) return notConfigured('JWT_SECRET')
     const token = request.headers.authorization?.match(/^Bearer (.+)$/)?.[1]
-    if (!token || !(await verifyOrderToken(token, env.JWT_SECRET))) {
+    if (!token || !(await consumeOrderToken(token, env.JWT_SECRET))) {
       return { status: 401, body: { error: 'Geçersiz ya da süresi dolmuş token' } }
     }
   }
