@@ -30,6 +30,14 @@ description: AtölyeKart projesinin bileşen standartları ve webhook payload fo
 - Kişisel veri toplayan her formda `ConsentCheckbox` (KVKK açık rıza, `required`) bulunur; metni (children) toplanan verileri, amacı ve rızanın kapsamını söyler (sözleşmeye dayanan işleme için rıza istenmez; siparişte rıza yalnız yurt dışı aktarım içindir), Aydınlatma Metni'ne (`#gizlilik`, `PrivacyPolicy`) bağlantı verir. Toplanan veri ya da amaç değişirse `PrivacyPolicy` de güncellenmeli.
 - Başarıda ekranda Türkçe onay mesajı, hatada "Bir sorun oldu, lütfen tekrar deneyin." gösterilir. Hata sessizce yutulmaz.
 
+### Mobil (`mobile/`, Expo + React Native)
+- Ortak veri ve kurallar yalnızca `mobile/src/shared.js` üzerinden `../src/data`'dan alınır; mobilde kopya tutulmaz (`metro.config.js` bu klasörü `watchFolders`'a ekler). `src/data`'ya yeni bir ortak dosya eklenirse `shared.js`'ten dışa aktar.
+- Gönderim `mobile/src/api.js` ile `SITE_URL + api/...`'ye (canlı Vercel API'si) yapılır; JWT, rate limit ve sunucu tarafı temizleme mobilde de geçerlidir. Uygulamada gizli değer olmaz.
+- Payload'lar web'deki builder'larla kurulur; `source` mobilde de `"atolyekart-web"` (sözleşme tek değer; ayrım istenirse sözleşme, `forwardWebhook.js` ve `sanitizePayload.js` birlikte değişir).
+- Bileşenler `mobile/src/components/BilesenAdi.js`, PascalCase. Stiller `StyleSheet.create`; renkler `mobile/src/theme.js`'ten (paletin aynası, palet değişirse ikisi birlikte güncellenir).
+- Formlar: her alanın görünür `Text` etiketi + `accessibilityLabel`; tarayıcının `required`/`pattern` kontrolünün yerini `mobile/src/validation.js` tutar. Hermes `v` bayrağını desteklemez: `formRules.js` desenleri hem `v` hem `u` bayrağında geçerli kalmalı. Rıza kutusu `accessibilityRole="checkbox"` + etiket; Aydınlatma Metni bağlantısı sitedeki `#gizlilik`'i açar ve metin uygulamayı da kapsar.
+- Gönderim durumu, hata metni ve başarı mesajları web'deki form kurallarıyla aynıdır.
+
 ## 2. Webhook formatı
 
 ### Gönderim

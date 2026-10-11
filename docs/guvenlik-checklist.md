@@ -12,10 +12,11 @@ Canlı: https://atolyekart-murex.vercel.app · Kontrol tarihi: Ekim 2026
 | 6 | Form girdileri sanitize ediliyor | ✅ | Sunucu `server/sanitizePayload.js`: ürün adı/stok sunucu verisinden, ad ≤80, telefon deseni, e-posta deseni ≤254, adet tam sayı 1–99; kontrol/yön karakterleri silinir; fazladan alanlar atılır; payload yeniden kurulur. Tarayıcıda aynı kurallar `pattern`/`maxLength`/`max`. React çıktıyı zaten kaçışlar. Ek: sipariş JWT ile korunur, `/api/*` IP başına 10 istek/dk |
 | 7 | KVKK rıza checkbox'ı + Privacy Policy yayında | ✅ (taslak) | İki formda zorunlu rıza kutusu; payload'da `consent: true`, sunucu zorunlu tutar. Aydınlatma metni `/#gizlilik`. Veri sorumlusu, bildirim hizmeti ve saklama süresi yer tutucu olarak duruyor; gerçek kullanımdan önce doldurulmalı ve hukukçuya kontrol ettirilmeli (KVKK m. 9, 2024 değişikliği) |
 | 8a | Claude denetimi: kritik bulgu yok | ✅ | `standart-denetcisi` güvenlik taraması: kritik/yüksek bulgu yok. Orta/düşük bulgulardan düzeltilenler: token uç noktasına rate limit, genişletilmiş karakter temizliği, açık event kontrolü, aralıklı sayaç temizliği, loglarda host sızıntısı |
-| 8b | Strix taraması | ➖ Atlandı | Docker ve ücretli LLM API anahtarı gerektirdiği için bu turda yapılmadı; yerine 8a'daki Claude güvenlik denetimi yapıldı |
+| 8b | Strix taraması: kritik bulgu yok | ✅ | Strix 1.7.0, `quick` mod, model `gemini/gemini-3.1-pro-preview`, maliyet 1,85 $. Hedef: git'te izlenen kodun temiz kopyası (`.env` dosyaları hariç), canlı sisteme istek yasak. Sonuç: **kritik/yüksek yok**, 1 orta: JWT tekrar kullanımı (token 15 dk içinde birden çok siparişte kullanılabiliyor; `jti` yok). XSS/injection/yapılandırma: sorun bulunmadı |
 
 ## Bilinen sınırlar (kabul edildi)
 
 - Rate limit sayacı bellek içi, sunucu örneği başına; kesin sınır için ortak depo (ör. Upstash Redis) gerekir.
 - JWT kimlik kanıtı değildir (site herkese açık); 15 dk içinde tekrar kullanılabilir. Webhook'a doğrudan istek atmayı zorlaştırır, etkisini rate limit sınırlar.
 - CSP yalnızca Vercel'de geçerli; GitHub Pages kopyasında başlık yok (orada form da yok).
+- Mobil uygulama (`mobile/`, Expo SDK 57): `npm audit` 22 açık (7 orta, 15 yüksek) — tümü `expo`/`react-native` alt bağımlılıklarında (çoğu `@expo/cli` geliştirme araçları). En güncel SDK kullanılıyor; `audit fix --force` sürüm düşürür. Expo güncellemesi beklenecek. Uygulamada gizli değer yok; istekler web ile aynı API korumalarından geçer.

@@ -36,6 +36,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Vercel (ana yayın): https://atolyekart-murex.vercel.app — proje `atolyekart`, deploy `npx --yes vercel --prod` (CLI projeye kurulu değil, npm audit temiz kalsın diye; GitHub bağlantısı yok, push otomatik deploy etmez). Güvenlik başlıkları (CSP vb.) `vercel.json`'da. Vercel derlemesinde `base: '/'`
 - GitHub: https://github.com/suhacann/AtolyeCard (public, `main` → `origin/main`)
 - GitHub Pages (ilk yayın, hâlâ açık): https://suhacann.github.io/AtolyeCard/ — `main`'e her push'ta `.github/workflows/deploy.yml` derleyip GitHub Pages'e yükler. `vite.config.js` build'de `base: '/AtolyeCard/'` kullanır
+- Mobil: `mobile/` (Expo SDK 57, React Native). Çalıştırma: `cd mobile && npx expo start` → Expo Go ile QR (Mac'te `npx expo login` gerekli). Ortak veri/kurallar `mobile/src/shared.js` üzerinden `../src/data`'dan (`metro.config.js` `watchFolders`); formlar canlı Vercel API'sine gönderir (`mobile/src/api.js`). Bileşenler `mobile/src/components/`
 - QR kod: adres `src/data/site.js` (`SITE_URL`). Sitede footer'daki `SiteQrCode` bileşeni (`qrcode.react`); baskı için `qr/atolyekart-qr.png`, `npm run qr` ile yeniden üretilir. Adres değişirse ikisini birlikte güncelle
 
 ## Durum
@@ -53,5 +54,7 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 2.3: Webhook secret sunucuya taşındı (`/api/webhook`), dev/prod env ayrı, production değeri Vercel'de; canlıda test edildi (tamam)
 - Hafta 2.4: Sipariş formuna JWT (`/api/order-token`) + `/api/webhook`'a rate limit (10/dk/IP); yerelde ve canlıda test edildi (tamam)
 - Hafta 2.5: KVKK açık rıza kutusu (iki formda; payload'da `consent: true`, sunucu zorunlu tutar) + `#gizlilik` aydınlatma metni taslağı. Yer tutucular (veri sorumlusu, bildirim hizmeti, saklama süresi) doldurulmadı
-- Hafta 2.6: Güvenlik checklist'i `docs/guvenlik-checklist.md` — vercel.json güvenlik başlıkları, sunucuda girdi temizleme, npm audit temiz (vercel CLI çıkarıldı), denetim bulguları düzeltildi. Strix taraması atlandı (Docker + LLM anahtarı gerektiriyor; kullanıcı kararı)
+- Hafta 2.6: Güvenlik checklist'i `docs/guvenlik-checklist.md` — vercel.json güvenlik başlıkları, sunucuda girdi temizleme, npm audit temiz (vercel CLI çıkarıldı), denetim bulguları düzeltildi. Strix taraması sonradan yapıldı (aşağıda)
 - QR kod Vercel adresine çevrildi (`SITE_URL` + `qr/atolyekart-qr.png`)
+- Strix taraması yapıldı (Gemini, quick, 1,85 $): kritik/yüksek yok, 1 orta (JWT tekrar kullanımı, `jti` yok) — açık
+- Hafta 2.7: Expo mobil port (`mobile/`); Expo Go ile telefonda açıldı, sipariş ve stok bildirimi canlı webhook'a ulaştı (tamam)

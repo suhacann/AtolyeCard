@@ -9,8 +9,8 @@ export default function PrivacyPolicy() {
       <p className="privacy-policy__updated">Son güncelleme: Ekim 2026</p>
 
       <p>
-        Ahşap Atölyesi olarak sipariş ve stok bildirimi formlarında bize verdiğiniz bilgileri yalnızca bu işler için
-        kullanıyoruz. Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında sizi bilgilendirmek
+        Ahşap Atölyesi olarak web sitemizdeki ve mobil uygulamamızdaki sipariş ve stok bildirimi formlarında bize
+        verdiğiniz bilgileri yalnızca bu işler için kullanıyoruz. İki kanalda da aynı bilgiler, aynı amaçlarla toplanır. Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında sizi bilgilendirmek
         için hazırlandı.
       </p>
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicy() {
           ve işletim kayıtlarında IP adresini tutabilir.
         </li>
       </ul>
-      <p>Sitede çerez, reklam ya da ziyaretçi takip aracı kullanılmıyor.</p>
+      <p>Sitede ve uygulamada çerez, reklam ya da ziyaretçi takip aracı kullanılmıyor.</p>
 
       <h3>Ne için kullanıyoruz</h3>
       <ul>
@@ -54,7 +54,8 @@ export default function PrivacyPolicy() {
       <h3>Kimlerle paylaşıyoruz</h3>
       <ul>
         <li>
-          <strong>Vercel Inc. (ABD):</strong> sitenin barındırıldığı hizmet. Form istekleri bu sunuculardan geçer.
+          <strong>Vercel Inc. (ABD):</strong> sitenin barındırıldığı hizmet. Siteden ve mobil uygulamadan gelen form
+          istekleri bu sunuculardan geçer.
         </li>
         <li>
           <strong>[Form bildirim hizmeti] ([ülke]):</strong> form bilgileri bize bu hizmet üzerinden ulaşır.
