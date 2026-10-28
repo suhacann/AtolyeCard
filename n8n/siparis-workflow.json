@@ -1,0 +1,278 @@
+{
+  "id": "atolyeKartSprs01",
+  "name": "AtölyeKart — Sipariş → Sheet + AI teşekkür maili",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "atolyekart-siparis",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a1f0c7d2-0001-4c1a-9a11-000000000001",
+      "name": "Sipariş Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "5b9e2f4a-7c1d-4e8b-9f3a-atolyekart01"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0d1e2f3-0002-4b2c-8d22-000000000002",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "order_created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1f0c7d2-0002-4c1a-9a11-000000000002",
+      "name": "Sipariş mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Webhook gövdesinden tablo satırını kurar ve tahmini hazırlanma süresini hesaplar.\n// Süre kuralla hesaplanır, AI'a hazır verilir: modelin kendi kafasından teslim sözü vermesini istemiyoruz.\n// Kategori eşlemesi src/data/products.js ile aynı olmalı; yeni ürün eklenince burayı da güncelleyin.\nconst CATEGORY_BY_PRODUCT = {\n  'hus-kuksa': 'kuksa',\n  'ceviz-yemek-kasigi': 'kasik',\n  'kiraz-olcu-kasigi': 'kasik',\n}\n// İş günü: ilk ürün için taban süre, her ek adet için ek süre.\nconst PREP_RULES = {\n  kuksa: { base: 5, perExtra: 2 },\n  kasik: { base: 3, perExtra: 1 },\n}\nconst DEFAULT_RULE = { base: 5, perExtra: 2 }\nconst MAX_DAYS = 21\n\nreturn $input.all().map(item => {\n  const order = item.json.body\n  const quantity = Number(order.quantity) || 1\n  const rule = PREP_RULES[CATEGORY_BY_PRODUCT[order.productId]] || DEFAULT_RULE\n  const prepDays = Math.min(MAX_DAYS, rule.base + rule.perExtra * (quantity - 1))\n\n  return {\n    json: {\n      'Tarih': new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }),\n      'Ad': order.name,\n      'Ürün Kodu': order.productId,\n      'Ürün': order.productName,\n      'Adet': quantity,\n      'Telefon': order.phone,\n      'E-posta': order.email,\n      'Hazırlanma (iş günü)': prepDays,\n    },\n  }\n})\n"
+      },
+      "id": "a1f0c7d2-0003-4c1a-9a11-000000000003",
+      "name": "Sipariş satırı",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "a1f0c7d2-0004-4c1a-9a11-000000000004",
+      "name": "Sheet'e yaz",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        660,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bir müşteri AtölyeKart'tan sipariş verdi. Müşteriye gönderilecek kısa bir teşekkür maili yaz.\n\nSipariş:\n- Müşteri adı: {{ $('Sipariş satırı').item.json['Ad'] }}\n- Ürün: {{ $('Sipariş satırı').item.json['Ürün'] }}\n- Adet: {{ $('Sipariş satırı').item.json['Adet'] }}\n- Tahmini hazırlanma süresi: {{ $('Sipariş satırı').item.json['Hazırlanma (iş günü)'] }} iş günü",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "Sen AtölyeKart'ın sesisin. AtölyeKart el yapımı ahşap mutfak ve kamp ürünleri (kuksa, tahta kaşık) yapan küçük bir atölye. Müşterileri kampçılar, doğa yürüyüşçüleri ve el işçiliğine değer veren insanlar.\n\nMail kuralları:\n- Türkçe, sıcak ve sade yaz. Kısa cümleler ve günlük dil kullan. Abartılı pazarlama dili, süslü betimleme, ünlem yağmuru ve emoji kullanma.\n- Müşteriye yalnızca adıyla hitap et (\"Merhaba Ayşe,\"). \"Hanım\", \"Bey\" gibi unvan ekleme; isimden cinsiyet tahmini yapma. \"Sen\" diye hitap et.\n- Konu satırı ürün adını içersin ve 50 karakteri geçmesin.\n- Ürünü ve adedi an. Ürünün elde yontulduğunu en fazla bir cümleyle hissettir; verilmeyen bir bilgi (boyut, bakım talimatı, malzeme özelliği) uydurma.\n- Hazırlanma süresini verilen iş günü sayısıyla aynen yaz. Kargo süresi, fiyat, indirim ya da kesin teslim tarihi verme.\n- Ürün hazır olduğunda haber verileceğini söyle.\n- Gövde en fazla 80 kelime olsun ve \"Sevgiyle,\\nAtölyeKart\" ile bitsin."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "a1f0c7d2-0005-4c1a-9a11-000000000005",
+      "name": "AI teşekkür maili",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        880,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {
+          "temperature": 0.6
+        }
+      },
+      "id": "a1f0c7d2-0006-4c1a-9a11-000000000006",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        840,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"konu\": \"Ceviz Yemek Kaşığı siparişin bize ulaştı\",\n  \"govde\": \"Merhaba Deniz,\\n\\n...\\n\\nSevgiyle,\\nAtölyeKart\",\n  \"hazirlanmaSuresi\": \"3 iş günü\"\n}"
+      },
+      "id": "a1f0c7d2-0007-4c1a-9a11-000000000007",
+      "name": "Mail formatı",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1020,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1e2f3a4-0008-4a01-9b01-000000000008",
+              "name": "kime",
+              "value": "={{ $('Sipariş satırı').item.json['E-posta'] }}",
+              "type": "string"
+            },
+            {
+              "id": "d1e2f3a4-0009-4a01-9b01-000000000009",
+              "name": "konu",
+              "value": "={{ $json.output.konu }}",
+              "type": "string"
+            },
+            {
+              "id": "d1e2f3a4-0010-4a01-9b01-000000000010",
+              "name": "govde",
+              "value": "={{ $json.output.govde }}",
+              "type": "string"
+            },
+            {
+              "id": "d1e2f3a4-0011-4a01-9b01-000000000011",
+              "name": "hazirlanmaSuresi",
+              "value": "={{ $json.output.hazirlanmaSuresi }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1f0c7d2-0008-4c1a-9a11-000000000008",
+      "name": "Mail taslağı",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1240,
+        -100
+      ]
+    }
+  ],
+  "connections": {
+    "Sipariş Webhook": {
+      "main": [
+        [
+          {
+            "node": "Sipariş mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sipariş mi?": {
+      "main": [
+        [
+          {
+            "node": "Sipariş satırı",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Sipariş satırı": {
+      "main": [
+        [
+          {
+            "node": "Sheet'e yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet'e yaz": {
+      "main": [
+        [
+          {
+            "node": "AI teşekkür maili",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI teşekkür maili",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mail formatı": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI teşekkür maili",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI teşekkür maili": {
+      "main": [
+        [
+          {
+            "node": "Mail taslağı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
