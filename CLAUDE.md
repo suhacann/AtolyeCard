@@ -62,3 +62,4 @@ El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun an
 - Hafta 2 özeti PDF: `docs/hafta-2-ozet.pdf`
 - Hafta 3.1: n8n (Docker) + ilk workflow — sipariş webhook'u → Google Sheets (tamam, execution #1–3 başarılı)
 - Hafta 3.2: Gemini ile kişiselleştirilmiş teşekkür maili + kuralla hesaplanan hazırlanma süresi (tamam). Prompt v1 → v2: "Ayşe Hanım" gibi cinsiyet tahmini (örnek JSON'dan kopyalanmıştı) ve süslü dil düzeltildi; yalnızca adla hitap, ürün adlı konu, ≤80 kelime
+- Hafta 3 özeti PDF: `docs/hafta-3-ozet.pdf`
