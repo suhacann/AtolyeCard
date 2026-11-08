@@ -1,68 +1,35 @@
 {
-  "id": "atolyeKartSprs01",
+  "id": "PUAcp9tnJCGqbO3x",
   "name": "AtölyeKart — Sipariş → Sheet + AI teşekkür maili",
+  "active": false,
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "atolyekart-siparis",
-        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "a1f0c7d2-0001-4c1a-9a11-000000000001",
+      "id": "629fd83b-ba90-4161-b29a-4b2eef67ad38",
       "name": "Sipariş Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.2,
       "position": [
-        0,
-        0
+        -448,
+        112
       ],
       "webhookId": "5b9e2f4a-7c1d-4e8b-9f3a-atolyekart01"
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "c0d1e2f3-0002-4b2c-8d22-000000000002",
-              "leftValue": "={{ $json.body.event }}",
-              "rightValue": "order_created",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
+        "jsCode": "// Webhook gövdesinden tablo satırını kurar ve tahmini hazırlanma süresini hesaplar.\n// Süre kuralla hesaplanır, AI'a hazır verilir: modelin kendi kafasından teslim sözü vermesini istemiyoruz.\n// Kategori, Ortak doğrulama sub-workflow'undan gelir (katalog orada).\n// İş günü: ilk ürün için taban süre, her ek adet için ek süre.\nconst PREP_RULES = {\n  kuksa: { base: 5, perExtra: 2 },\n  kasik: { base: 3, perExtra: 1 },\n}\nconst DEFAULT_RULE = { base: 5, perExtra: 2 }\nconst MAX_DAYS = 21\n\nreturn $input.all().map(item => {\n  const order = item.json\n  const quantity = Number(order.quantity) || 1\n  const rule = PREP_RULES[order.category] || DEFAULT_RULE\n  const prepDays = Math.min(MAX_DAYS, rule.base + rule.perExtra * (quantity - 1))\n\n  return {\n    json: {\n      'Tarih': new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }),\n      'Ad': order.name,\n      'Ürün Kodu': order.productId,\n      'Ürün': order.productName,\n      'Adet': quantity,\n      'Telefon': order.phone,\n      'E-posta': order.email,\n      'Hazırlanma (iş günü)': prepDays,\n    },\n  }\n})\n"
       },
-      "id": "a1f0c7d2-0002-4c1a-9a11-000000000002",
-      "name": "Sipariş mi?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        220,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Webhook gövdesinden tablo satırını kurar ve tahmini hazırlanma süresini hesaplar.\n// Süre kuralla hesaplanır, AI'a hazır verilir: modelin kendi kafasından teslim sözü vermesini istemiyoruz.\n// Kategori eşlemesi src/data/products.js ile aynı olmalı; yeni ürün eklenince burayı da güncelleyin.\nconst CATEGORY_BY_PRODUCT = {\n  'hus-kuksa': 'kuksa',\n  'ceviz-yemek-kasigi': 'kasik',\n  'kiraz-olcu-kasigi': 'kasik',\n}\n// İş günü: ilk ürün için taban süre, her ek adet için ek süre.\nconst PREP_RULES = {\n  kuksa: { base: 5, perExtra: 2 },\n  kasik: { base: 3, perExtra: 1 },\n}\nconst DEFAULT_RULE = { base: 5, perExtra: 2 }\nconst MAX_DAYS = 21\n\nreturn $input.all().map(item => {\n  const order = item.json.body\n  const quantity = Number(order.quantity) || 1\n  const rule = PREP_RULES[CATEGORY_BY_PRODUCT[order.productId]] || DEFAULT_RULE\n  const prepDays = Math.min(MAX_DAYS, rule.base + rule.perExtra * (quantity - 1))\n\n  return {\n    json: {\n      'Tarih': new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }),\n      'Ad': order.name,\n      'Ürün Kodu': order.productId,\n      'Ürün': order.productName,\n      'Adet': quantity,\n      'Telefon': order.phone,\n      'E-posta': order.email,\n      'Hazırlanma (iş günü)': prepDays,\n    },\n  }\n})\n"
-      },
-      "id": "a1f0c7d2-0003-4c1a-9a11-000000000003",
+      "id": "2cbadc28-0511-4283-b325-62c5c664cd81",
       "name": "Sipariş satırı",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
-        -100
+        448,
+        -112
       ]
     },
     {
@@ -70,29 +37,31 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "mode": "list",
-          "value": ""
+          "value": "",
+          "mode": "list"
         },
         "sheetName": {
           "__rl": true,
-          "mode": "list",
-          "value": ""
+          "value": "",
+          "mode": "list"
         },
         "columns": {
           "mappingMode": "autoMapInputData",
           "value": {},
           "matchingColumns": [],
-          "schema": []
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
-      "id": "a1f0c7d2-0004-4c1a-9a11-000000000004",
+      "id": "3799de3c-ebb6-4231-8f1f-5beec1baee46",
       "name": "Sheet'e yaz",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        660,
-        -100
+        672,
+        -112
       ]
     },
     {
@@ -103,20 +72,19 @@
         "messages": {
           "messageValues": [
             {
-              "type": "SystemMessagePromptTemplate",
-              "message": "Sen AtölyeKart'ın sesisin. AtölyeKart el yapımı ahşap mutfak ve kamp ürünleri (kuksa, tahta kaşık) yapan küçük bir atölye. Müşterileri kampçılar, doğa yürüyüşçüleri ve el işçiliğine değer veren insanlar.\n\nMail kuralları:\n- Türkçe, sıcak ve sade yaz. Kısa cümleler ve günlük dil kullan. Abartılı pazarlama dili, süslü betimleme, ünlem yağmuru ve emoji kullanma.\n- Müşteriye yalnızca adıyla hitap et (\"Merhaba Ayşe,\"). \"Hanım\", \"Bey\" gibi unvan ekleme; isimden cinsiyet tahmini yapma. \"Sen\" diye hitap et.\n- Konu satırı ürün adını içersin ve 50 karakteri geçmesin.\n- Ürünü ve adedi an. Ürünün elde yontulduğunu en fazla bir cümleyle hissettir; verilmeyen bir bilgi (boyut, bakım talimatı, malzeme özelliği) uydurma.\n- Hazırlanma süresini verilen iş günü sayısıyla aynen yaz. Kargo süresi, fiyat, indirim ya da kesin teslim tarihi verme.\n- Ürün hazır olduğunda haber verileceğini söyle.\n- Gövde en fazla 80 kelime olsun ve \"Sevgiyle,\\nAtölyeKart\" ile bitsin."
+              "message": "Sen AtölyeKart'ın sesisin. AtölyeKart el yapımı ahşap mutfak ve kamp ürünleri (kuksa, tahta kaşık) yapan küçük bir atölye. Müşterileri kampçılar, doğa yürüyüşçüleri ve el işçiliğine değer veren insanlar.  Mail kuralları: - Türkçe, sıcak ve sade yaz. Kısa cümleler ve günlük dil kullan. Abartılı pazarlama dili, süslü betimleme, ünlem yağmuru ve emoji kullanma. - Müşteriye yalnızca adıyla hitap et (\"Merhaba Ayşe,\"). \"Hanım\", \"Bey\" gibi unvan ekleme; isimden cinsiyet tahmini yapma. \"Sen\" diye hitap et. - Konu satırı ürün adını içersin ve 50 karakteri geçmesin. - Ürünü ve adedi an. Ürünün elde yontulduğunu en fazla bir cümleyle hissettir; verilmeyen bir bilgi (boyut, bakım talimatı, malzeme özelliği) uydurma. - Hazırlanma süresini verilen iş günü sayısıyla aynen yaz. Kargo süresi, fiyat, indirim ya da kesin teslim tarihi verme. - Ürün hazır olduğunda haber verileceğini söyle. - Gövde en fazla 80 kelime olsun ve \"Sevgiyle,\\nAtölyeKart\" ile bitsin."
             }
           ]
         },
         "batching": {}
       },
-      "id": "a1f0c7d2-0005-4c1a-9a11-000000000005",
+      "id": "d495489b-3c30-41b7-879b-7b3a56c860d2",
       "name": "AI teşekkür maili",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        880,
-        -100
+        896,
+        -112
       ]
     },
     {
@@ -126,27 +94,26 @@
           "temperature": 0.6
         }
       },
-      "id": "a1f0c7d2-0006-4c1a-9a11-000000000006",
+      "id": "b4b81934-b3af-49f0-92a5-984d58fc5055",
       "name": "Gemini",
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        840,
-        120
+        848,
+        112
       ]
     },
     {
       "parameters": {
-        "schemaType": "fromJson",
         "jsonSchemaExample": "{\n  \"konu\": \"Ceviz Yemek Kaşığı siparişin bize ulaştı\",\n  \"govde\": \"Merhaba Deniz,\\n\\n...\\n\\nSevgiyle,\\nAtölyeKart\",\n  \"hazirlanmaSuresi\": \"3 iş günü\"\n}"
       },
-      "id": "a1f0c7d2-0007-4c1a-9a11-000000000007",
+      "id": "33661071-adfa-476e-8ef5-28393634b25b",
       "name": "Mail formatı",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        1020,
-        120
+        1040,
+        112
       ]
     },
     {
@@ -181,14 +148,212 @@
         },
         "options": {}
       },
-      "id": "a1f0c7d2-0008-4c1a-9a11-000000000008",
+      "id": "790875f4-baa3-4554-92e3-39c58b206c4d",
       "name": "Mail taslağı",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1240,
-        -100
+        1248,
+        -112
       ]
+    },
+    {
+      "id": "c4330003-0000-4000-8000-000000000012",
+      "name": "Hangi form?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -224,
+        112
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c4330002-0000-4000-8000-000000000013",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "order_created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sipariş"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c4330002-0000-4000-8000-000000000014",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "stock_notification_requested",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Stok bildirimi"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Bilinmeyen"
+        }
+      }
+    },
+    {
+      "id": "c4330001-0000-4000-8000-000000000015",
+      "name": "Doğrula (sipariş)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        -112
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "atolyeKartDogru1",
+          "mode": "list",
+          "cachedResultName": "AtölyeKart — Ortak doğrulama (sub-workflow)"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c4330001-0000-4000-8000-000000000016",
+      "name": "Doğrula (stok bildirimi)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        448
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "atolyeKartDogru1",
+          "mode": "list",
+          "cachedResultName": "AtölyeKart — Ortak doğrulama (sub-workflow)"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c4330004-0000-4000-8000-000000000017",
+      "name": "Bilinmeyen olay",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        224,
+        672
+      ],
+      "parameters": {
+        "errorMessage": "=Bilinmeyen olay: \"{{ String($json.body.event ?? '(boş)').slice(0, 60) }}\""
+      }
+    },
+    {
+      "id": "c4300002-0000-4000-8000-000000000018",
+      "name": "Stok bildirimi satırı",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        448
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4300003-0000-4000-8000-000000000019",
+              "name": "Tarih",
+              "value": "={{ $now.setZone('Europe/Istanbul').toFormat('dd.MM.yyyy HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000020",
+              "name": "Ad",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000021",
+              "name": "Ürün Kodu",
+              "value": "={{ $json.productId }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000022",
+              "name": "Ürün",
+              "value": "={{ $json.productName }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000023",
+              "name": "E-posta",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c4300001-0000-4000-8000-000000000024",
+      "name": "Stok bildirimine yaz",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        448
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Stok Bildirimleri",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -196,23 +361,11 @@
       "main": [
         [
           {
-            "node": "Sipariş mi?",
+            "node": "Hangi form?",
             "type": "main",
             "index": 0
           }
         ]
-      ]
-    },
-    "Sipariş mi?": {
-      "main": [
-        [
-          {
-            "node": "Sipariş satırı",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
       ]
     },
     "Sipariş satırı": {
@@ -269,10 +422,77 @@
           }
         ]
       ]
+    },
+    "Hangi form?": {
+      "main": [
+        [
+          {
+            "node": "Doğrula (sipariş)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Doğrula (stok bildirimi)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Bilinmeyen olay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doğrula (sipariş)": {
+      "main": [
+        [
+          {
+            "node": "Sipariş satırı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doğrula (stok bildirimi)": {
+      "main": [
+        [
+          {
+            "node": "Stok bildirimi satırı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stok bildirimi satırı": {
+      "main": [
+        [
+          {
+            "node": "Stok bildirimine yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "errorWorkflow": "atolyeKartHata01"
   },
-  "active": false
+  "nodeGroups": [],
+  "pinData": {},
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Version 094bf323",
+    "description": ""
+  }
 }

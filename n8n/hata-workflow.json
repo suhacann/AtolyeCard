@@ -1,0 +1,132 @@
+{
+  "id": "atolyeKartHata01",
+  "name": "AtölyeKart — Hata yakalayıcı",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul"
+  },
+  "nodes": [
+    {
+      "id": "c4320001-0000-4000-8000-000000000003",
+      "name": "Hata olunca",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c4300002-0000-4000-8000-000000000004",
+      "name": "Hata kaydı",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4300003-0000-4000-8000-000000000005",
+              "name": "Tarih",
+              "value": "={{ $now.setZone('Europe/Istanbul').toFormat('dd.MM.yyyy HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000006",
+              "name": "Workflow",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000007",
+              "name": "Execution",
+              "value": "={{ $json.execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000008",
+              "name": "Node",
+              "value": "={{ $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000009",
+              "name": "Hata",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "c4300003-0000-4000-8000-000000000010",
+              "name": "Bağlantı",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c4300001-0000-4000-8000-000000000011",
+      "name": "Hatalar sekmesine yaz",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Hatalar",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Hata olunca": {
+      "main": [
+        [
+          {
+            "node": "Hata kaydı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hata kaydı": {
+      "main": [
+        [
+          {
+            "node": "Hatalar sekmesine yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

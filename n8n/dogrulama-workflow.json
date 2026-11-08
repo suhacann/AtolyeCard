@@ -1,0 +1,51 @@
+{
+  "id": "atolyeKartDogru1",
+  "name": "AtölyeKart — Ortak doğrulama (sub-workflow)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "id": "c4310001-0000-4000-8000-000000000001",
+      "name": "Çağrıldığında",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "c4310002-0000-4000-8000-000000000002",
+      "name": "Doğrula",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Sipariş ve stok bildirimi akışlarının ORTAK doğrulaması; iki akış da bu sub-workflow'u çağırır.\n// Kurallar sitenin sunucusundaki server/sanitizePayload.js ve src/data/formRules.js ile aynı.\n// Site zaten doğruluyor; burası n8n webhook'una doğrudan (siteyi atlayarak) gelen istekler için ikinci kapı.\n// Geçersiz istekte hata fırlatılır: çağıran workflow durur, \"Hata yakalayıcı\" workflow'u kaydı tutar.\n// Hata mesajına kişisel veri (ad, e-posta, telefon) yazılmaz.\n\n// Ürün kataloğu: src/data/products.js ile elle senkron. Yeni ürün eklenince burayı da güncelleyin.\nconst CATALOG = {\n  'hus-kuksa': { category: 'kuksa' },\n  'ceviz-yemek-kasigi': { category: 'kasik' },\n  'kiraz-olcu-kasigi': { category: 'kasik' },\n}\nconst EVENTS = ['order_created', 'stock_notification_requested']\nconst EMAIL_RE = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/\nconst PHONE_RE = /^[0-9 \\-+()]{7,20}$/\nconst MAX_QUANTITY = 99\nconst text = (v) => (typeof v === 'string' ? v.trim() : '')\n\nreturn $input.all().map((item) => {\n  const p = item.json.body ?? item.json\n  const product = CATALOG[p.productId]\n  if (!product) {\n    throw new Error(`Bilinmeyen ürün ID'si: \"${String(p.productId ?? '(boş)').slice(0, 60)}\"`)\n  }\n\n  const name = text(p.name)\n  const email = text(p.email)\n  const phone = text(p.phone)\n  const problems = []\n  if (!EVENTS.includes(p.event)) problems.push('bilinmeyen olay')\n  if (!name || name.length > 80) problems.push('ad boş ya da çok uzun')\n  if (email && (email.length > 254 || !EMAIL_RE.test(email))) problems.push('e-posta biçimi geçersiz')\n  if (p.consent !== true) problems.push('açık rıza yok')\n  if (p.event === 'stock_notification_requested' && !email) problems.push('e-posta gerekli')\n  if (p.event === 'order_created') {\n    if (!PHONE_RE.test(phone)) problems.push('telefon geçersiz')\n    if (!Number.isInteger(p.quantity) || p.quantity < 1 || p.quantity > MAX_QUANTITY) problems.push('adet 1–99 arası tam sayı olmalı')\n  }\n  if (problems.length) {\n    throw new Error(`Geçersiz istek (${p.productId}): ${problems.join(', ')}`)\n  }\n\n  // Temizlenmiş payload + katalogdan kategori: sonraki adımlar kategori eşlemesini tekrar tutmasın.\n  return {\n    json: {\n      event: p.event,\n      name,\n      productId: p.productId,\n      productName: text(p.productName),\n      ...(p.event === 'order_created' ? { phone, quantity: p.quantity } : {}),\n      email,\n      consent: true,\n      source: text(p.source),\n      category: product.category,\n    },\n  }\n})\n"
+      }
+    }
+  ],
+  "connections": {
+    "Çağrıldığında": {
+      "main": [
+        [
+          {
+            "node": "Doğrula",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
