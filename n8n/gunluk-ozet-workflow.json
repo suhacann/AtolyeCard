@@ -1,0 +1,317 @@
+{
+  "id": "atolyeKartOzet01",
+  "name": "AtölyeKart — Günlük sipariş özeti",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul"
+  },
+  "nodes": [
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000001",
+      "name": "Her gün 21:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000002",
+      "name": "Elle test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000003",
+      "name": "Özet günü",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        100
+      ],
+      "notes": "Varsayılan: bugün (İstanbul). Geçmiş bir günü denemek için değeri elle yazın, ör. 28.10.2026",
+      "notesInFlow": true,
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1a1c001-0000-4000-8000-0000000000a1",
+              "name": "ozetGunu",
+              "value": "={{ $now.setZone('Europe/Istanbul').toFormat('dd.MM.yyyy') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000004",
+      "name": "Siparişleri oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        440,
+        100
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "filtersUI": {},
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000005",
+      "name": "Ürüne göre grupla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// Özet gününün siparişlerini ürün koduna göre gruplar: ürün başına sipariş sayısı, toplam adet ve tutar.\n// Fiyatlar src/data/products.js ile elle senkron; fiyat değişirse burayı da güncelleyin.\nconst PRICE_BY_PRODUCT = {\n  'hus-kuksa': 1450,\n  'ceviz-yemek-kasigi': 380,\n  'kiraz-olcu-kasigi': 290,\n}\n\nconst ozetGunu = $('Özet günü').first().json.ozetGunu\n\n// 'Tarih' sütunu \"08.11.2026 19:45:12\" ya da \"8.11.2026 ...\" gelebilir: gün/ay/yılı sayı olarak karşılaştır.\nconst dayKey = (text) => {\n  const m = String(text ?? '').match(/(\\d{1,2})[./](\\d{1,2})[./](\\d{4})/)\n  return m ? `${Number(m[1])}.${Number(m[2])}.${m[3]}` : null\n}\nconst target = dayKey(ozetGunu)\n\nconst groups = new Map()\nfor (const { json: row } of $input.all()) {\n  if (!row['Ürün Kodu'] || dayKey(row['Tarih']) !== target) continue\n  const code = row['Ürün Kodu']\n  const g = groups.get(code) ?? { name: row['Ürün'], orders: 0, quantity: 0 }\n  g.orders += 1\n  g.quantity += Number(row['Adet']) || 1\n  groups.set(code, g)\n}\n\nif (groups.size === 0) {\n  return [{ json: { mesaj: `${ozetGunu} için sipariş yok` } }]\n}\n\nreturn [...groups.entries()]\n  .sort((a, b) => b[1].quantity - a[1].quantity)\n  .map(([code, g]) => {\n    const price = PRICE_BY_PRODUCT[code]\n    return {\n      json: {\n        'Tarih': ozetGunu,\n        'Ürün Kodu': code,\n        'Ürün': g.name,\n        'Sipariş Sayısı': g.orders,\n        'Toplam Adet': g.quantity,\n        // Bilinmeyen ürün kodunda tutar boş kalır; uydurma fiyat yazmıyoruz.\n        'Tutar (₺)': price === undefined ? '' : price * g.quantity,\n      },\n    }\n  })\n"
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000006",
+      "name": "Sipariş var mı?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b1a1c001-0000-4000-8000-0000000000b1",
+              "leftValue": "={{ $json['Ürün Kodu'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000007",
+      "name": "Ürünleri tek tek işle",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000008",
+      "name": "Özete satır yaz",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1340,
+        100
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Günlük Özet",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-000000000009",
+      "name": "Günün özeti",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -120
+      ],
+      "parameters": {
+        "jsCode": "// Döngü bitince tüm ürün satırlarından tek bir okunur özet kurar.\nconst rows = $('Ürüne göre grupla').all().map((i) => i.json)\nconst tl = (n) => `${n.toLocaleString('tr-TR')} ₺`\n\nconst siparisSayisi = rows.reduce((s, r) => s + r['Sipariş Sayısı'], 0)\nconst toplamAdet = rows.reduce((s, r) => s + r['Toplam Adet'], 0)\nconst toplamTutar = rows.reduce((s, r) => s + (Number(r['Tutar (₺)']) || 0), 0)\n\nconst satirlar = rows.map(\n  (r) => `- ${r['Ürün']}: ${r['Toplam Adet']} adet (${r['Sipariş Sayısı']} sipariş)` +\n    (r['Tutar (₺)'] === '' ? ', fiyat bilinmiyor' : `, ${tl(r['Tutar (₺)'])}`),\n)\n\nreturn [{\n  json: {\n    ozetGunu: rows[0]['Tarih'],\n    siparisSayisi,\n    toplamAdet,\n    toplamTutar,\n    metin: [`${rows[0]['Tarih']} sipariş özeti`, ...satirlar, `Toplam: ${siparisSayisi} sipariş, ${toplamAdet} adet, ${tl(toplamTutar)}`].join('\\n'),\n  },\n}]\n"
+      }
+    },
+    {
+      "id": "b1a1c001-0000-4000-8000-00000000000a",
+      "name": "Sipariş yok",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        220
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Her gün 21:00": {
+      "main": [
+        [
+          {
+            "node": "Özet günü",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elle test": {
+      "main": [
+        [
+          {
+            "node": "Özet günü",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Özet günü": {
+      "main": [
+        [
+          {
+            "node": "Siparişleri oku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Siparişleri oku": {
+      "main": [
+        [
+          {
+            "node": "Ürüne göre grupla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ürüne göre grupla": {
+      "main": [
+        [
+          {
+            "node": "Sipariş var mı?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sipariş var mı?": {
+      "main": [
+        [
+          {
+            "node": "Ürünleri tek tek işle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sipariş yok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ürünleri tek tek işle": {
+      "main": [
+        [
+          {
+            "node": "Günün özeti",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Özete satır yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Özete satır yaz": {
+      "main": [
+        [
+          {
+            "node": "Ürünleri tek tek işle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
