@@ -260,7 +260,8 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "errorWorkflow": "atolyeKartHata01",
-    "timezone": "Europe/Istanbul"
+    "timezone": "Europe/Istanbul",
+    "availableInMCP": true
   },
   "active": false,
   "pinData": {}
