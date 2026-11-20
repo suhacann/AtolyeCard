@@ -8,7 +8,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.5,
       "position": [
-        0,
+        -480,
         300
       ],
       "parameters": {
@@ -20,7 +20,8 @@
           "title": "Ahşap Atölyesi",
           "subtitle": "Bakım, sipariş ve kargo soruları",
           "inputPlaceholder": "Sorunuzu yazın…",
-          "responseMode": "lastNode"
+          "responseMode": "lastNode",
+          "loadPreviousSession": "manually"
         }
       },
       "webhookId": "8e3f6a2d-1c57-4b8e-a0d4-6f2b9c1e7a02"
@@ -104,6 +105,69 @@
       "parameters": {
         "modelName": "models/gemini-embedding-001"
       }
+    },
+    {
+      "id": "c5200001-0000-4000-8000-000000000007",
+      "name": "Önceki oturum mu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c5200001-0000-4000-8000-0000000000a1",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "loadPreviousSession",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c5200001-0000-4000-8000-000000000008",
+      "name": "Geçmişi oku (Redis)",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        0,
+        60
+      ],
+      "parameters": {
+        "operation": "get",
+        "propertyName": "gecmis",
+        "key": "={{ $json.sessionId }}__Ziyaret_i_haf_zas___Redis_",
+        "keyType": "list",
+        "options": {}
+      }
+    },
+    {
+      "id": "c5200001-0000-4000-8000-000000000009",
+      "name": "Görünür mesajlar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        60
+      ],
+      "parameters": {
+        "jsCode": "// Redis'teki sohbet geçmişini chat penceresine geri yüklemek için süzer.\n// Hafızada araç çağrıları ve belge parçaları da duruyor; ekranda yalnızca\n// ziyaretçinin mesajları ve botun metin cevapları görünmeli.\nconst ham = $input.first().json.gecmis || [];\nconst data = ham\n  .slice()\n  .reverse() // Redis listesi en yeniden eskiye; pencere eskiden yeniye ister\n  .map((satir) => {\n    try { return JSON.parse(satir); } catch { return null; }\n  })\n  .filter((m) => m && (m.type === 'human' || m.type === 'ai'))\n  .filter((m) => typeof m.data?.content === 'string' && m.data.content.trim() !== '')\n  .map((m) => ({\n    lc: 1,\n    type: 'constructor',\n    id: ['langchain_core', 'messages', m.type === 'human' ? 'HumanMessage' : 'AIMessage'],\n    kwargs: { content: m.data.content },\n  }));\nreturn [{ json: { data } }];\n"
+      }
     }
   ],
   "connections": {
@@ -111,7 +175,7 @@
       "main": [
         [
           {
-            "node": "SSS asistanı",
+            "node": "Önceki oturum mu?",
             "type": "main",
             "index": 0
           }
@@ -157,6 +221,35 @@
           {
             "node": "SSS asistanı",
             "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Önceki oturum mu?": {
+      "main": [
+        [
+          {
+            "node": "Geçmişi oku (Redis)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SSS asistanı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geçmişi oku (Redis)": {
+      "main": [
+        [
+          {
+            "node": "Görünür mesajlar",
+            "type": "main",
             "index": 0
           }
         ]
