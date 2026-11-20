@@ -59,7 +59,7 @@ Canlı olan: web (Vercel + GitHub Pages) ve mobil (Expo Go). n8n, Qdrant ve Redi
 
 ## n8n (Docker, http://localhost:5678)
 
-Repodaki workflow JSON'ları `n8n/` altında; credential, Sheet ve token kimliği içermez (içe aktarırken eklenir ya da n8n'de seçilir). n8n 2.x'te değişiklik "Publish" ile yayına girer; CLI ile içe aktarılan workflow `n8n publish:workflow` + `docker restart n8n` ister. Sub-workflow'lar da yayında olmalı.
+Workflow adları standarda uyar: `AtölyeKart · <Alan> · <Ne yapar>`, sub-workflow'lar `(sub)` ile biter (alanlar ve kontrol: `docs/final-plan.md`, `python3 scripts/n8n-workflow-listesi.py`). Ad değiştirmek ID'yi değiştirmez; API'de `PUT /workflows/{id}` yalnızca adı değiştirirse yayındaki sürüm aynı kalır. Repodaki workflow JSON'ları `n8n/` altında; credential, Sheet ve token kimliği içermez (içe aktarırken eklenir ya da n8n'de seçilir). n8n 2.x'te değişiklik "Publish" ile yayına girer; CLI ile içe aktarılan workflow `n8n publish:workflow` + `docker restart n8n` ister. Sub-workflow'lar da yayında olmalı.
 
 | Workflow | n8n ID | Ne yapar |
 |---|---|---|
@@ -69,6 +69,7 @@ Repodaki workflow JSON'ları `n8n/` altında; credential, Sheet ve token kimliğ
 | `gunluk-ozet-workflow.json` | `atolyeKartOzet01` | Her gün 21:00 (Europe/Istanbul) Sayfa1'den o günün siparişlerini ürüne göre gruplar, "Günlük Özet" sekmesine yazar. Geçmiş gün için "Özet günü" node'una tarih elle yazılır |
 | `rag-belge-yukleme-workflow.json` | `atolyeKartRag001` | Form http://localhost:5678/form/atolyekart-belge → aynı `metadata.belge`'nin eski parçalarını siler → Recursive splitter → Qdrant |
 | `sss-chatbot-workflow.json` | `atolyeKartChat01` | SSS chatbotu (aşağıda). MCP'ye açık tek workflow |
+| `drive-yedekleme-workflow.json` | `atolyeKartYedek1` | Her gece 03:00 (ve elle) n8n API'den tüm workflow'ları alır, tek JSON dosyası olarak Google Drive'a yükler. Credential: "n8n API" + Google Drive (n8n'de seçilir) |
 
 **Elle senkron tutulanlar** (`products.js` değişirse güncelle): doğrulama sub-workflow'undaki ürün→kategori kataloğu, `stoktaki_urunler` aracındaki stok listesi, günlük özetteki fiyatlar. Hazırlanma süresi kuralı hem sipariş Code node'unda hem `siparis-sss` belgesinde yazılı.
 
@@ -115,6 +116,10 @@ Bu Mac'te `/usr/local/bin/docker` kırık bir bağlantı; komutları `PATH="/App
 - Rate limit sayacı bellek içi, sunucu örneği başına
 - KVKK aydınlatma metnindeki yer tutucular doldurulmadı; mail ve öneri taslakları gönderilmiyor
 - Ürün listesi n8n'in üç yerinde elle senkron (yukarıda)
+
+## Final (3 Aralık)
+
+Final görevi (`docs/Final_Gorevi_BizCard.pdf`, repoda değil) AtölyeKart üzerine "AtölyeKart Asistanı" olarak yapılıyor; plan, eksikler ve kontrol listesi `docs/final-plan.md`'de. Her adımdan sonra oradaki durum sütununu güncelle.
 
 ## Geçmiş
 
