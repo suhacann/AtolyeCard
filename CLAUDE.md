@@ -1,85 +1,128 @@
 # AtölyeKart — Ahşap Atölyesi
 
-El yapımı ahşap ürünler satan küçük bir atölyenin web sitesi. Kursun ana projesi BizCard'a paralel yürüyen 6 haftalık ödev projesi.
+El yapımı ahşap kuksa ve kaşık satan küçük bir atölyenin web sitesi, mobil uygulaması ve n8n otomasyonları. Kursun ana projesi BizCard'a paralel yürüyen 6 haftalık ödev projesi (6 hafta tamamlandı).
 
 ## Atölye
 
 - **Sektör:** El yapımı ahşap mutfak ve kamp ürünleri (ahşap oyma / yontma)
 - **Hedef kitle:** Kampçılar ve doğa yürüyüşçüleri, el işçiliğine ve doğal malzemeye değer verenler, hediye arayanlar
-- **Ürün kategorileri:** Kuksa (ahşap bardak), tahta kaşık (yemek kaşığı, ölçü kaşığı)
+- **Ürünler:** Huş Kuksa, Ceviz Yemek Kaşığı, Kiraz Kahve Ölçü Kaşığı (tükendi)
+- **Ziyaretçi ne yapar:** Kataloğa bakar, sipariş verir, tükenen ürün için stok bildirimi ister, SSS chatbotuna bakım/sipariş/kargo sorar
+- **Dil ve ton:** Türkçe, fiyatlar ₺. Sıcak, sade, zanaat odaklı; abartılı pazarlama dili yok. Renkler ahşap/toprak tonları
 
-## Ziyaretçi ne yapar
+## Mimari
 
-- Ürün kataloğuna bakar
-- Sipariş verir
-- Tükenen ürün geri geldiğinde haberdar olmak ister
+```
+Tarayıcı (React)  ─┐
+Expo mobil uygulama ┴─► Vercel /api (JWT, rate limit, girdi temizleme) ─► WEBHOOK_URL
+                                                                              │
+          production: webhook.site  ◄──────────────────────────────────────────┤
+          geliştirme: yerel n8n  ◄──────────────────────────────────────────────┘
 
-## Dil ve ton
+Docker (bu Mac)
+├─ n8n 2.42  :5678   sipariş/stok akışı → Google Sheets + Gemini; günlük özet; hata yakalayıcı;
+│                    RAG belge yükleme; SSS chatbotu; public API; MCP sunucusu
+├─ Qdrant 1.20  127.0.0.1:6333   SSS belgelerinin vektörleri
+└─ Redis 8      127.0.0.1:6379   chatbot ziyaretçi hafızası
+```
 
-- Site dili Türkçe, fiyatlar ₺
-- Sıcak, sade, zanaat odaklı bir ton; abartılı pazarlama dili yok
-- Renkler: ahşap/toprak tonları (kahverengi, krem)
+Canlı olan: web (Vercel + GitHub Pages) ve mobil (Expo Go). n8n, Qdrant ve Redis yalnızca bu Mac'te çalışır; canlı site yerel n8n'e erişemez, production webhook'u webhook.site'a gider.
 
-## Teknik yapı
+## Web (React 19 + Vite)
 
-- React 19 + Vite. Çalıştırma: `npm run dev` (http://localhost:5173)
-- Bileşenler `src/components/` altında: `App` → `ProductList` (+ `CategoryFilter`) → `ProductCard` → `ProductImage` + `OrderForm` / `StockNotificationForm` (ikisinde de `ConsentCheckbox`); footer'da `SiteQrCode` ve gizlilik bağlantısı. `App`, `#gizlilik` hash'inde katalog yerine `PrivacyPolicy` (KVKK aydınlatma metni taslağı; köşeli parantezli yer tutucular atölye sahibince doldurulacak) gösterir. Yardımcılar ve veri `src/data/` altında
-- Ürün verisi tek yerde: `src/data/products.js` (dizi). Alanlar: `id` (okunabilir slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`
-- `ProductCard` ve `ProductImage` tek bir `product` objesi alır. Fiyatı `src/data/formatPrice.js` biçimlendirir (hatalı fiyatta "Fiyat yakında"); `inStock: false` ise kartta "Tükendi" etiketi çıkar
-- Formlar: stoktaki üründe `OrderForm` ("Sipariş Ver"), tükenende `StockNotificationForm` ("Stok Bildirimi İste"). Ürünlerin üstünde `CategoryFilter` (kategoriler `src/data/categories.js`). E-posta kuralı `src/data/formRules.js`
-- Webhook: tarayıcı `src/data/sendWebhook.js` ile `POST /api/webhook`'a gönderir (payload'lar `src/data/webhookPayloads.js`). Sunucu tarafı: `api/*.js` (Vercel fonksiyonları, ince sarmalayıcı) → `server/handlers.js` (`/api/webhook`, `/api/order-token`) → `server/forwardWebhook.js`; geliştirmede aynı `routes`'u `vite.config.js`'teki eklenti sunar. Sipariş JWT ile korunur (`server/orderToken.js`, 15 dk, tek kullanımlık `jti`), `/api/webhook` IP başına dakikada 10 istek (`server/rateLimit.js`, bellek içi). Payload sunucuda `server/sanitizePayload.js` ile doğrulanıp yeniden kurulur (kurallar `src/data/formRules.js`). Geliştirmede `server/` değişince `npm run dev`'i yeniden başlat (Vite config bağımlılıklarını izlemiyor). Gizli değerler `WEBHOOK_URL` ve `JWT_SECRET` (`VITE_` öneki YOK, tarayıcıya girmez): geliştirmede `.env.development.local`, production'da yalnızca Vercel panelinde. Örnek: `.env.example`. GitHub Pages'te `/api` olmadığı için formlar orada gizli
-- Veri kontrolü: `src/data/validateProducts.js` — `ProductList` geliştirme sırasında (`import.meta.env.DEV`) çalıştırır, sorunları konsola `[products.js] ...` uyarısı olarak yazar. Yeni alan eklenirse kontrol de güncellenmeli
-- Stiller tek dosyada: `src/index.css`
-- İlk statik HTML sürümü referans için `legacy/index.html` içinde
-- Bileşen yazarken ve webhook gönderirken `atolyekart-standartlari` skill'ine uy
-- Denetim: `.claude/agents/standart-denetcisi.md` sub-agent'ı kodu bu skill'e göre okur ve raporlar (dosya değiştirmez). Bileşen/form/webhook değişikliğinden sonra ve commit'ten önce çalıştır
-- Vercel (ana yayın): https://atolyekart-murex.vercel.app — proje `atolyekart`, deploy `npx --yes vercel --prod` (CLI projeye kurulu değil, npm audit temiz kalsın diye; GitHub bağlantısı yok, push otomatik deploy etmez). Güvenlik başlıkları (CSP vb.) `vercel.json`'da. Vercel derlemesinde `base: '/'`
-- GitHub: https://github.com/suhacann/AtolyeCard (public, `main` → `origin/main`)
-- GitHub Pages (ilk yayın, hâlâ açık): https://suhacann.github.io/AtolyeCard/ — `main`'e her push'ta `.github/workflows/deploy.yml` derleyip GitHub Pages'e yükler. `vite.config.js` build'de `base: '/AtolyeCard/'` kullanır
-- Mobil: `mobile/` (Expo SDK 57, React Native). Çalıştırma: `cd mobile && npx expo start` → Expo Go ile QR (Mac'te `npx expo login` gerekli). Ortak veri/kurallar `mobile/src/shared.js` üzerinden `../src/data`'dan (`metro.config.js` `watchFolders`); formlar canlı Vercel API'sine gönderir (`mobile/src/api.js`). Bileşenler `mobile/src/components/`
-- n8n (Hafta 3): Docker'da yerel n8n (`n8n` konteyneri, http://localhost:5678, sürüm 2.x). Workflow kaydı `n8n/siparis-workflow.json` (credential ve Sheet kimliği içermez; n8n'de çalışan kopya `PUAcp9tnJCGqbO3x`). Akış: Webhook `POST /webhook/atolyekart-siparis` → Switch "Hangi form?" (`order_created` / `stock_notification_requested` / bilinmeyen → Stop and Error) → her dal "Ortak doğrulama" sub-workflow'unu çağırır (`n8n/dogrulama-workflow.json`, `atolyeKartDogru1`: ürün ID'si, e-posta, rıza, ad, siparişte telefon/adet; kurallar `sanitizePayload.js` ile aynı; ürün→kategori kataloğu yalnızca burada, `products.js` ile elle senkron; geçersizse hata fırlatır, mesajda kişisel veri yok). Stok dalı → "Stok Bildirimleri" sekmesi → AI Agent "Alternatif öneri" (Gemini + Code Tool `stoktaki_urunler`; stoktaki ürün listesi `products.js` ile elle senkron) → "Öneri taslağı" (`kime`, `tukenenUrun`, `oneri`; gönderilmez). Sipariş dalı → Code (satır + hazırlanma süresi kuralı: kuksa 5 + 2/ek adet, kaşık 3 + 1/ek adet, en fazla 21 iş günü; kategori sub-workflow'dan gelir) → Google Sheets "AtölyeKart Siparişler" → Basic LLM Chain + Gemini (`gemini-3-flash-preview`) + yapılandırılmış çıktı → mail taslağı (`kime`, `konu`, `govde`, `hazirlanmaSuresi`; mail gönderilmez). Workflow ayarında Error Workflow = "Hata yakalayıcı" (`n8n/hata-workflow.json`, `atolyeKartHata01`): Error Trigger → "Hatalar" sekmesine tarih, workflow, execution, node, mesaj, bağlantı. Error Workflow elle (test) çalıştırmalarda tetiklenmez; test için yayındaki URL'ye `curl` atılır. Sub-workflow'lar da Publish edilmeli. Geliştirmede `.env.development.local` `WEBHOOK_URL`'i bu adrese bakar; production (Vercel) hâlâ webhook.site'a gider, yerel n8n'e erişemez. n8n 2.x'te değişiklik "Publish" ile yayına alınır. Günlük özet (Hafta 4.1): `n8n/gunluk-ozet-workflow.json` (n8n'de `atolyeKartOzet01`, yayında) — her gün 21:00 (Europe/Istanbul) "Sayfa1"i okur, Code ile o günün siparişlerini ürüne göre gruplar (fiyatlar `products.js` ile elle senkron), Loop ile ürün başına "Günlük Özet" sekmesine satır yazar; geçmiş günü denemek için "Özet günü" node'una tarih elle yazılır. Repodaki workflow JSON'ları Sheet/credential kimliği içermez; n8n'e içe aktarırken eklenir ya da n8n'de seçilir
-- RAG / SSS chatbot (Hafta 5): Qdrant 1.20 Docker'da (`qdrant` konteyneri, `qdrant_storage` volume, yalnızca `127.0.0.1:6333`; panel http://localhost:6333/dashboard). n8n ona `http://host.docker.internal:6333` ile erişir (credential "Qdrant (yerel)", `qdrantYerel00001`). Koleksiyon `atolyekart_sss` (Gemini `gemini-embedding-001`, 3072 boyut, cosine). Belgeler `rag/` altında: kaynak HTML `rag/kaynak/`, yüklenen Word dosyaları `textutil -convert docx` ile üretilir. Yükleme: `n8n/rag-belge-yukleme-workflow.json` (`atolyeKartRag001`) — form http://localhost:5678/form/atolyekart-belge (dosya + belge türü + sürüm + chunk boyutu/örtüşmesi) → aynı `metadata.belge`'nin eski parçalarını siler → Recursive splitter → Qdrant. Metadata: `belge` (`bakim-rehberi` | `siparis-sss`), `versiyon`, `chunkBoyutu`, `yuklenmeTarihi`. Chatbot: `n8n/sss-chatbot-workflow.json` (`atolyeKartChat01`) — public hosted chat http://localhost:5678/webhook/8e3f6a2d-1c57-4b8e-a0d4-6f2b9c1e7a02/chat → AI Agent (Gemini, yalnızca belgeden cevap, sonunda kaynak belge+sürüm, "siz" hitabı) + `atolye_belgeleri` (Qdrant retrieve-as-tool, topK 4) + ziyaretçi hafızası (Redis Chat Memory: sohbet penceresinin `sessionId`'si başına ayrı geçmiş, son 10 mesaj, 24 saat TTL; geçmiş yalnızca bağlam için, bilgi her turda belgeden). Sayfa yenilenince pencere aynı `sessionId`'yi tarayıcının localStorage'ından alır ve `loadPreviousSession` ister: Chat Trigger'da "Load Previous Session" = Manually → "Önceki oturum mu?" (IF) → "Geçmişi oku (Redis)" → "Görünür mesajlar" (Code; hafızadaki araç çağrılarını ve belge parçalarını atar, yalnızca ziyaretçi + bot metni döner). "From Memory" seçilirse ham belge parçaları ekranda balon olarak görünür, kullanma. Redis 8 Docker'da (`redis` konteyneri, `redis_data` volume, AOF açık, yalnızca `127.0.0.1:6379`, parola yok); n8n credential "Redis (yerel)" (`redisYerel000001`, `host.docker.internal:6379`). Anahtar adı `<sessionId>__Ziyaret_i_haf_zas___Redis_`; kontrol: `docker exec redis redis-cli --scan`. Bu Mac'te `/usr/local/bin/docker` kırık bir bağlantı; `PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"` ile çalıştır. CLI ile içe aktarılan workflow `n8n publish:workflow` + `docker restart n8n` ile yayına girer
-- n8n API (Hafta 6.3): public API http://localhost:5678/api/v1, başlık `X-N8N-API-KEY`. Key n8n → Settings → n8n API'de oluşturulur, `~/.n8n_api_key` (izin 600) ya da `N8N_API_KEY` ortam değişkeninde durur; repoya ve sohbete girmez. Haftalık sorgu: `python3 scripts/n8n-haftalik-siparis.py [YYYY-AA-GG]` — sipariş workflow'unun o haftaki (Pazartesi–Pazar, Europe/Istanbul) execution'larını `includeData` ile çeker, "Sipariş Webhook" gövdesindeki `event`'e göre sipariş/stok bildirimini ayırır, ürün başına adet ve başarısızları sayar (kişisel veri yazdırmaz). n8n eski execution'ları budar; kalıcı sipariş kaydı Google Sheet'tir
-- n8n MCP (Hafta 6.2): n8n'in yerleşik MCP sunucusu http://localhost:5678/mcp-server/http (Settings → Instance-level MCP). Claude Code'a yalnızca bu proje için (`local` scope, `~/.claude.json`) access token ile bağlı: `claude mcp add --transport http n8n http://localhost:5678/mcp-server/http --header "Authorization: Bearer $(cat ~/.n8n_mcp_token)"`; token `~/.n8n_mcp_token` (izin 600), repoya girmez. OAuth denendi, Safari açamadı / Chrome'da "Invalid state parameter" verdi; token yolu çalışıyor. MCP'ye yalnızca SSS chatbotu açık (`availableInMCP: true`, repodaki JSON'da da); sipariş workflow'u kapalı (çalıştırılırsa Sheet'e yazar). Yeni MCP sunucusu eklenince Claude Code yeniden başlatılmalı. Araçlar: `search_workflows`, `get_workflow_details`, `execute_workflow` (chat için `triggerNodeName: "Ziyaretçi sorusu"`, `inputs.chatInput`), `get_workflow_execution`, `search_workflow_executions` vb.
-- QR kod: adres `src/data/site.js` (`SITE_URL`). Sitede footer'daki `SiteQrCode` bileşeni (`qrcode.react`); baskı için `qr/atolyekart-qr.png`, `npm run qr` ile yeniden üretilir. Adres değişirse ikisini birlikte güncelle
+- Çalıştırma: `npm run dev` (http://localhost:5173). `server/` değişince yeniden başlat (Vite config bağımlılıklarını izlemiyor)
+- Bileşenler `src/components/`: `App` → `ProductList` (+ `CategoryFilter`) → `ProductCard` → `ProductImage` + `OrderForm` / `StockNotificationForm` (ikisinde de `ConsentCheckbox`); footer'da `SiteQrCode` ve gizlilik bağlantısı. `#gizlilik` hash'inde katalog yerine `PrivacyPolicy` (KVKK aydınlatma metni taslağı; köşeli parantezli yer tutucular atölye sahibince doldurulacak)
+- Ürün verisi tek yerde: `src/data/products.js`. Alanlar: `id` (slug), `name`, `category` (`kuksa` | `kasik`), `price` (₺, sayı), `description`, `emoji`, `inStock`. Kontrol: `src/data/validateProducts.js` geliştirmede konsola `[products.js] ...` uyarısı yazar; yeni alan eklenirse kontrol de güncellenir
+- `ProductCard`/`ProductImage` tek `product` objesi alır. Fiyat `src/data/formatPrice.js` (hatalıysa "Fiyat yakında"); `inStock: false` → "Tükendi" etiketi ve stok bildirimi formu, `true` → sipariş formu
+- Kategoriler `src/data/categories.js`, form kuralları (`EMAIL_PATTERN`, `PHONE_PATTERN`, `MAX_LENGTH`, `MAX_QUANTITY`) `src/data/formRules.js`, site adresi `src/data/site.js` (`SITE_URL`)
+- Stiller tek dosyada `src/index.css`. İlk statik HTML sürümü `legacy/index.html`
+- Bileşen yazarken ve webhook gönderirken `atolyekart-standartlari` skill'ine uy. Bileşen/form/webhook değişikliğinden sonra ve commit'ten önce `standart-denetcisi` sub-agent'ını çalıştır (`.claude/agents/standart-denetcisi.md`; yalnızca okur, raporlar)
 
-## Durum
+## Sunucu (`/api`, Vercel fonksiyonları)
 
-- Hafta 1.1: Statik HTML, 3 ürün (tamam)
-- Hafta 1.2: React'e geçiş + kart hover efekti (tamam)
-- Hafta 1.3: Ürün verisi diziye taşındı (tamam)
-- Hafta 1.3+: "Tükendi" etiketi (tamam)
-- Hafta 1.4: Hata yönetimi turu — kasıtlı hata + debug pratiği, ürün verisi kontrolü (tamam)
-- Hafta 1.5: Proje skill'i `.claude/skills/atolyekart-standartlari/` (bileşen standartları + webhook formatı); git deposu ve ilk commit; GitHub'a bağlama; GitHub Pages yayını + QR kod; `standart-denetcisi` sub-agent'ı ve ilk denetimin düzeltmeleri (tamam)
-- Denetimin açık soruları kapatıldı: iki ara ton palete eklendi, kart öğe sınıfları BEM (`.product-card__price` vb.), `validateProducts` `description` ve `emoji`'yi de kontrol ediyor (tamam)
-- Hafta 1.6: İki webhook özelliği — sipariş formu + stok bildirimi formu, webhook.site ile tarayıcıdan test edildi, payload'lar sözleşmeye uygun geldi (tamam)
-- Hafta 2.1: Git + worktree — e-posta düzeltmesi main'de, kategori filtresi worktree'de, merge (tamam)
-- Hafta 2.2: Vercel CLI ile deploy (tamam)
-- Hafta 2.3: Webhook secret sunucuya taşındı (`/api/webhook`), dev/prod env ayrı, production değeri Vercel'de; canlıda test edildi (tamam)
-- Hafta 2.4: Sipariş formuna JWT (`/api/order-token`) + `/api/webhook`'a rate limit (10/dk/IP); yerelde ve canlıda test edildi (tamam)
-- Hafta 2.5: KVKK açık rıza kutusu (iki formda; payload'da `consent: true`, sunucu zorunlu tutar) + `#gizlilik` aydınlatma metni taslağı. Yer tutucular (veri sorumlusu, bildirim hizmeti, saklama süresi) doldurulmadı
-- Hafta 2.6: Güvenlik checklist'i `docs/guvenlik-checklist.md` — vercel.json güvenlik başlıkları, sunucuda girdi temizleme, npm audit temiz (vercel CLI çıkarıldı), denetim bulguları düzeltildi. Strix taraması sonradan yapıldı (aşağıda)
-- QR kod Vercel adresine çevrildi (`SITE_URL` + `qr/atolyekart-qr.png`)
-- Strix taraması yapıldı (Gemini, quick, 1,85 $): kritik/yüksek yok, 1 orta (JWT tekrar kullanımı) — düzeltildi: token tek kullanımlık (`jti`)
-- Hafta 2.7: Expo mobil port (`mobile/`); Expo Go ile telefonda açıldı, sipariş ve stok bildirimi canlı webhook'a ulaştı (tamam)
-- Hafta 2 özeti PDF: `docs/hafta-2-ozet.pdf`
-- Hafta 3.1: n8n (Docker) + ilk workflow — sipariş webhook'u → Google Sheets (tamam, execution #1–3 başarılı)
-- Hafta 3.2: Gemini ile kişiselleştirilmiş teşekkür maili + kuralla hesaplanan hazırlanma süresi (tamam). Prompt v1 → v2: "Ayşe Hanım" gibi cinsiyet tahmini (örnek JSON'dan kopyalanmıştı) ve süslü dil düzeltildi; yalnızca adla hitap, ürün adlı konu, ≤80 kelime
-- Hafta 3 özeti PDF: `docs/hafta-3-ozet.pdf`
-- Hafta 4 ödevi: `docs/Odev_AtolyeKart_Hafta4.pdf` (repoda değil). 4.1 zorunlu, 4.3 zorunlu, 4.2 (AI Agent) isteğe bağlı
-- Hafta 4.1: Günlük sipariş özeti workflow'u — Schedule + Code + Loop, 28.10.2026 verisiyle test edildi (execution #8), yayında (tamam)
-- Hafta 4.3: Ortak doğrulama sub-workflow'u (sipariş ve stok bildirimi dallarından çağrılır) + Hata yakalayıcı Error Workflow'u; `curl` ile yayındaki URL'den test edildi: geçerli sipariş #10, stok bildirimi #12, bilinmeyen ürün ID'si #13 → yakalandı #16 (tamam). Repodaki `siparis-workflow.json` da prompt v2'li güncel hâle getirildi
-- Hafta 4.2: Stok bildirimi dalına AI Agent — `stoktaki_urunler` aracını çağırıp alternatif öneriyor; #17 ilk deneme: öneri doğru ama amaç farkını söylemedi → kural eklendi ("farklı iş görüyorsa açıkça söyle"); #19: "Kahve ölçüsü için olmasa da… Ceviz Yemek Kaşığı (380 ₺)" (tamam)
-- Hafta 4 özeti PDF: `docs/hafta-4-ozet.pdf` (editör ekran görüntüleriyle; Error Handler execution ve Günlük Özet sekmesi görüntüsü yok, kanıt metin olarak)
-- Hafta 5 ödevi: `docs/Odev_AtolyeKart_Hafta5.pdf` (repoda değil). RAG dokümanı, chunk, Vector DB, Chat Trigger ve metadata'lı ikinci doküman zorunlu
-- Hafta 5.1: Qdrant + iki Word belgesi (`bakim-rehberi` 12 parça, `siparis-sss` 8 parça; chunk 500 / örtüşme 50) + SSS chatbotu; curl ile test edildi: bulaşık makinesi, 3 kaşığın hazırlanma süresi, şarap, Bitcoin (belgede yok → uydurmadı), çatlak (iki belgeden). Aynı belgeyi yeniden yükleme eski parçaları değiştiriyor (tekrar yok)
-- Hafta 5.2: `siparis-sss` sürüm 2 (ücretsiz kargo 500 → 750 ₺) formla yüklendi (2026-11-15 19:56); eski 8 parça silindi, yerine 8 yeni parça (`versiyon: "2"`), 500 ₺ metni kalmadı. Chatbot "Kargo ücretsiz mi?" → 750 ₺, "(Kaynak: siparis-sss, sürüm 2)" (tamam).
-- Hafta 5 chunk denemesi (Kısa düşünce): bakım rehberi 300 → 21 parça (#39), 1000 → 5 parça (#41); yağlama sorusu (#40, #42) ikisinde de doğru. 1000'de cevap balmumu-yağ karışımını da içerdi, 300'de "özel karışım" diye eksik kaldı. Sonra 500 / sürüm 1'e geri döndürüldü
-- Hafta 5 hafıza hatası: aynı sohbette güncelleme sonrası bot aracı çağırmadan hafızadan eski cevabı (500 ₺, "sürüm 1") verdi (#36, #37). Sistem mesajına "sohbet geçmişini bilgi kaynağı sayma, tekrar soruda aracı yeniden çağır" kuralı eklendi; aynı oturumda 3 tekrar sorunun üçünde de araç çağrıldı (#44–46)
-- Hafta 5 özeti PDF: `docs/hafta-5-ozet.pdf` (Qdrant paneli ve yükleme formu ekran görüntüleriyle; n8n editörü ve sohbet penceresi görüntüsü yok, sohbetler execution numarasıyla metin olarak)
-- Hafta 6 ödevi: `docs/Odev_AtolyeKart_Hafta6.pdf` (repoda değil). 6.1 Redis chat history, 6.3 n8n API sorgusu + CLAUDE.md zorunlu; 6.2 n8n MCP isteğe bağlı
-- Hafta 6.1: Chatbot hafızası Redis'e taşındı (ziyaretçi başına). Test: A adını ve Huş Kuksa'yı söyledi (#50, #51) → `docker restart n8n` → A "adımı ve ne sorduğumu hatırlıyor musunuz?" → "Deniz", Huş Kuksa, ateş + yağlama (#52); B aynı soruya "henüz paylaşmadınız" (#53); A "Onu bulaşık makinesinde…" → kuksa olarak anladı, belgeden cevap + kaynak (#54) (tamam)
-- Hafta 6.1 düzeltme: tarayıcıda sayfa yenilenince bot adı unutuyordu, çünkü pencere her açılışta yeni `sessionId` alıyordu ("Load Previous Session" kapalıydı). Açıldı (Manually + süzme dalı); `loadPreviousSession` A için 10 mesaj (5 soru-cevap) döndürüyor, araç/belge kaydı yok; yeni ziyaretçi için `[]`
-- Hafta 6.3 öncesi: Google Sheets OAuth bağlantısı düşmüştü ("needs to be reconnected"; Google Cloud uygulaması Testing modunda, refresh token 7 günde bir düşer) → test siparişleri #75–84 Sheet'te hata verdi, Hata yakalayıcı da aynı credential'la yazamadı. Kullanıcı yeniden bağladı; #87, #89, #91, #93 başarılı
-- Hafta 6.3: n8n API sorgusu — 16–22.11.2026: 3 sipariş (6 adet: Huş Kuksa 3, Ceviz Yemek Kaşığı 3), 1 stok bildirimi, 4 başarısız; 9–15.11: 0; 2–8.11: 1 sipariş, 3 stok bildirimi, 1 başarısız (tamam)
-- Hafta 6.2: n8n MCP Claude Code'a bağlandı (token ile). MCP'den `search_workflows` → 6 workflow; `search_workflow_executions` → sipariş workflow'unun bu haftası #87–93 başarılı, #75–84 hata (6.3 API sonucuyla aynı); `execute_workflow` ile chatbota "Kargo ücretsiz mi?" → #95: araç çağrıldı, "750 ₺ ve üzeri… (Kaynak: siparis-sss, sürüm 2)" (tamam)
+- Tarayıcı `src/data/sendWebhook.js` ile `POST /api/webhook`'a gönderir; payload'lar `src/data/webhookPayloads.js`. `api/*.js` ince sarmalayıcı → `server/handlers.js` (`/api/webhook`, `/api/order-token`) → `server/forwardWebhook.js`. Geliştirmede aynı `routes`'u `vite.config.js`'teki eklenti sunar
+- Sipariş JWT ile korunur (`server/orderToken.js`: HS256, 15 dk, tek kullanımlık `jti`). `/api/webhook` ve `/api/order-token` IP başına dakikada 10 istek (`server/rateLimit.js`, bellek içi)
+- Payload sunucuda `server/sanitizePayload.js` ile doğrulanıp yeniden kurulur; yalnızca iki event (`order_created`, `stock_notification_requested`), `source: "atolyekart-web"` ve `consent: true` kabul edilir
+- Güvenlik başlıkları (CSP vb.) `vercel.json`'da. Kontrol listesi `docs/guvenlik-checklist.md`. GitHub Pages'te `/api` olmadığı için formlar orada gizli
+
+## Mobil (`mobile/`, Expo SDK 57)
+
+- Çalıştırma: `cd mobile && npx expo start` → Expo Go ile QR (Mac'te `npx expo login` gerekli)
+- Ortak veri/kurallar `mobile/src/shared.js` üzerinden `../src/data`'dan (`metro.config.js` `watchFolders`); kopya tutulmaz. Formlar canlı Vercel API'sine gönderir (`mobile/src/api.js`). Bileşenler `mobile/src/components/`, renkler `mobile/src/theme.js`
+
+## Yayın
+
+- **Vercel (ana):** https://atolyekart-murex.vercel.app — proje `atolyekart`, deploy `npx --yes vercel --prod` (CLI projeye kurulu değil; GitHub bağlantısı yok, push otomatik deploy etmez). Derlemede `base: '/'`
+- **GitHub:** https://github.com/suhacann/AtolyeCard (public, `main` → `origin/main`)
+- **GitHub Pages:** https://suhacann.github.io/AtolyeCard/ — her push'ta `.github/workflows/deploy.yml`; `base: '/AtolyeCard/'`
+- **QR kod:** footer'da `SiteQrCode` (`qrcode.react`); baskı için `qr/atolyekart-qr.png`, `npm run qr` ile üretilir. Adres değişirse `SITE_URL` ile birlikte güncelle
+
+## n8n (Docker, http://localhost:5678)
+
+Repodaki workflow JSON'ları `n8n/` altında; credential, Sheet ve token kimliği içermez (içe aktarırken eklenir ya da n8n'de seçilir). n8n 2.x'te değişiklik "Publish" ile yayına girer; CLI ile içe aktarılan workflow `n8n publish:workflow` + `docker restart n8n` ister. Sub-workflow'lar da yayında olmalı.
+
+| Workflow | n8n ID | Ne yapar |
+|---|---|---|
+| `siparis-workflow.json` | `PUAcp9tnJCGqbO3x` | Webhook `POST /webhook/atolyekart-siparis` → Switch "Hangi form?" → her dal Ortak doğrulama'yı çağırır. **Sipariş:** Code (hazırlanma süresi: kuksa 5 + 2/ek adet, kaşık 3 + 1/ek adet, en fazla 21 iş günü) → Sheet "AtölyeKart Siparişler" (Sayfa1) → Gemini (`gemini-3-flash-preview`) teşekkür maili taslağı (gönderilmez). **Stok:** "Stok Bildirimleri" sekmesi → AI Agent "Alternatif öneri" (Code Tool `stoktaki_urunler`) → öneri taslağı. Bilinmeyen event → Stop and Error |
+| `dogrulama-workflow.json` | `atolyeKartDogru1` | Ortak doğrulama sub-workflow'u: ürün ID'si, e-posta, rıza, ad, siparişte telefon/adet (kurallar `sanitizePayload.js` ile aynı). Geçersizse hata fırlatır, mesajda kişisel veri yok |
+| `hata-workflow.json` | `atolyeKartHata01` | Error Workflow: Sheet "Hatalar" sekmesine tarih, workflow, execution, node, mesaj, bağlantı. Elle (test) çalıştırmada tetiklenmez; yayındaki URL'ye `curl` ile test edilir |
+| `gunluk-ozet-workflow.json` | `atolyeKartOzet01` | Her gün 21:00 (Europe/Istanbul) Sayfa1'den o günün siparişlerini ürüne göre gruplar, "Günlük Özet" sekmesine yazar. Geçmiş gün için "Özet günü" node'una tarih elle yazılır |
+| `rag-belge-yukleme-workflow.json` | `atolyeKartRag001` | Form http://localhost:5678/form/atolyekart-belge → aynı `metadata.belge`'nin eski parçalarını siler → Recursive splitter → Qdrant |
+| `sss-chatbot-workflow.json` | `atolyeKartChat01` | SSS chatbotu (aşağıda). MCP'ye açık tek workflow |
+
+**Elle senkron tutulanlar** (`products.js` değişirse güncelle): doğrulama sub-workflow'undaki ürün→kategori kataloğu, `stoktaki_urunler` aracındaki stok listesi, günlük özetteki fiyatlar. Hazırlanma süresi kuralı hem sipariş Code node'unda hem `siparis-sss` belgesinde yazılı.
+
+**Google Sheets bağlantısı:** Google Cloud uygulaması "Testing" modundaysa OAuth yenileme anahtarı 7 günde bir düşer ("needs to be reconnected"); sipariş ve Hata yakalayıcı birlikte hata verir. n8n → Credentials → Google Sheets account → yeniden bağlan (ya da Google Cloud'da uygulamayı "In production" yap).
+
+## SSS chatbotu (RAG + Redis hafıza)
+
+- **Belgeler:** `rag/kaynak/*.html` → `textutil -convert docx` ile `rag/*.docx`. `bakim-rehberi` (sürüm 1, 12 parça) ve `siparis-sss` (sürüm 2: ücretsiz kargo 750 ₺, 8 parça); chunk 500, örtüşme 50. Metadata: `belge`, `versiyon`, `chunkBoyutu`, `yuklenmeTarihi`. Belge güncellenince yükleme formundan yeni sürüm numarasıyla yüklenir
+- **Qdrant:** koleksiyon `atolyekart_sss` (Gemini `gemini-embedding-001`, 3072 boyut, cosine). Panel http://localhost:6333/dashboard. n8n credential "Qdrant (yerel)" (`qdrantYerel00001`, `http://host.docker.internal:6333`)
+- **Sohbet:** public hosted chat http://localhost:5678/webhook/8e3f6a2d-1c57-4b8e-a0d4-6f2b9c1e7a02/chat → "Önceki oturum mu?" (IF) → AI Agent "SSS asistanı" (Gemini, sıcaklık 0.2) + `atolye_belgeleri` (Qdrant retrieve-as-tool, topK 4) + "Ziyaretçi hafızası (Redis)"
+- **Sistem mesajı kuralları:** her bilgi sorusunda aracı çağır, yalnızca bu turun parçalarından cevap ver; sohbet geçmişi bilgi kaynağı değil, yalnızca bağlam (ad, sorulan ürün, "onu" gibi göndermeler); belgede yoksa uydurma, sabit "bilgi yok" cümlesi; sonunda "(Kaynak: belge, sürüm N)"; "siz" hitabı, unvan yok, en fazla 100 kelime; kişisel veri isteme
+- **Hafıza:** Redis Chat Memory, sohbet penceresinin `sessionId`'si başına ayrı geçmiş, son 10 mesaj, 24 saat TTL. Anahtar `<sessionId>__Ziyaret_i_haf_zas___Redis_`; kontrol `docker exec redis redis-cli --scan`. n8n credential "Redis (yerel)" (`redisYerel000001`, `host.docker.internal:6379`)
+- **Sayfa yenileme:** pencere `sessionId`'yi localStorage'da tutar ve açılışta `loadPreviousSession` ister. Chat Trigger'da "Load Previous Session" = **Manually** → "Geçmişi oku (Redis)" → "Görünür mesajlar" (Code; hafızadaki araç çağrılarını ve belge parçalarını atar, yalnızca ziyaretçi + bot metni döner). "From Memory" seçilirse ham belge parçaları ekranda balon olarak görünür, kullanma
+
+## n8n API ve MCP
+
+- **Public API:** http://localhost:5678/api/v1, başlık `X-N8N-API-KEY`. Key n8n → Settings → n8n API; `~/.n8n_api_key` (izin 600) ya da `N8N_API_KEY`. Haftalık sorgu: `python3 scripts/n8n-haftalik-siparis.py [YYYY-AA-GG]` — sipariş workflow'unun o haftaki (Pazartesi–Pazar, Europe/Istanbul) execution'larını çeker, "Sipariş Webhook" gövdesindeki `event`'e göre sipariş/stok bildirimini ayırır, ürün başına adet ve başarısızları sayar (kişisel veri yazdırmaz). n8n eski execution'ları budar; kalıcı sipariş kaydı Google Sheet'tir
+- **MCP:** n8n'in yerleşik MCP sunucusu http://localhost:5678/mcp-server/http (Settings → Instance-level MCP). Claude Code'a yalnızca bu proje için (`local` scope, `~/.claude.json`) access token ile bağlı: `claude mcp add --transport http n8n http://localhost:5678/mcp-server/http --header "Authorization: Bearer $(cat ~/.n8n_mcp_token)"`. OAuth bu Mac'te çalışmadı (Safari açamadı, Chrome'da "Invalid state parameter"). Yeni MCP sunucusu eklenince Claude Code yeniden başlatılmalı. Yalnızca SSS chatbotu MCP'ye açık (`availableInMCP: true`); sipariş workflow'u kapalı tutulur, çünkü çalıştırılırsa Sheet'e yazar. Chatbotu çalıştırmak: `execute_workflow` + `triggerNodeName: "Ziyaretçi sorusu"` + `inputs.chatInput`
+
+## Docker ve gizli değerler
+
+Bu Mac'te `/usr/local/bin/docker` kırık bir bağlantı; komutları `PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"` ile çalıştır. Docker Desktop kapalıysa `open -a Docker`. Konteynerler `--restart unless-stopped`.
+
+| Konteyner | İmaj | Port | Volume |
+|---|---|---|---|
+| `n8n` | `docker.n8n.io/n8nio/n8n:2.42.7` | 5678 | `n8n_data` |
+| `qdrant` | `qdrant/qdrant` (1.20) | `127.0.0.1:6333` | `qdrant_storage` |
+| `redis` | `redis:8-alpine` (AOF açık, parola yok) | `127.0.0.1:6379` | `redis_data` |
+
+| Gizli değer | Nerede durur | Asla |
+|---|---|---|
+| `WEBHOOK_URL`, `JWT_SECRET` | Geliştirme: `.env.development.local`; production: yalnızca Vercel paneli. Örnek: `.env.example` | `VITE_` öneki (tarayıcıya girer), repo |
+| Gemini, Google Sheets, Qdrant, Redis credential'ları | n8n'in kendi credential deposu | Repodaki workflow JSON'ları |
+| n8n API key | `~/.n8n_api_key` (600) | Repo, sohbet |
+| n8n MCP token | `~/.n8n_mcp_token` (600) + `~/.claude.json` (local scope) | Repo, sohbet |
+
+Ödev PDF'leri (`docs/Odev_AtolyeKart_Hafta*.pdf`) public repoya eklenmez.
+
+## Bilinen sınırlar
+
+- n8n, Qdrant, Redis ve chatbot yalnızca yerelde; canlı site webhook.site'a gider
+- Qdrant ve Redis'te parola yok (yalnızca 127.0.0.1'e açık)
+- Chatbotun "geçmişi bilgi kaynağı sayma" kuralı yalnızca sistem mesajında; hafıza araç çağrılarını ve belge parçalarını da saklıyor
+- Rate limit sayacı bellek içi, sunucu örneği başına
+- KVKK aydınlatma metnindeki yer tutucular doldurulmadı; mail ve öneri taslakları gönderilmiyor
+- Ürün listesi n8n'in üç yerinde elle senkron (yukarıda)
+
+## Geçmiş
+
+| Hafta | Konu | Özet |
+|---|---|---|
+| 1 | React, skill, webhook | Statik HTML → React; ürün verisi dizide, "Tükendi" etiketi, hata yönetimi; proje skill'i + `standart-denetcisi`; GitHub + Pages + QR; sipariş ve stok bildirimi formları (webhook.site ile test) |
+| 2 | Yayın ve güvenlik | Git worktree; Vercel; webhook secret sunucuda; JWT + rate limit; KVKK rıza kutusu + aydınlatma metni taslağı; güvenlik checklist'i; Strix taraması (1 orta bulgu → tek kullanımlık `jti`); Expo mobil port. `docs/hafta-2-ozet.pdf` |
+| 3 | n8n | Docker'da n8n; webhook → Google Sheets; Gemini teşekkür maili (prompt v2: cinsiyet tahmini ve süslü dil kaldırıldı). `docs/hafta-3-ozet.pdf` |
+| 4 | n8n ileri | Günlük özet (Schedule + Loop); Ortak doğrulama sub-workflow'u + Hata yakalayıcı; stok dalında AI Agent alternatif önerisi. `docs/hafta-4-ozet.pdf` |
+| 5 | RAG | Qdrant + iki Word belgesi + metadata'lı yükleme formu (yeniden yükleme eskisini siler); SSS chatbotu; `siparis-sss` sürüm 2 (750 ₺); chunk denemesi (300/500/1000); hafızadan eski cevap hatası düzeltildi. `docs/hafta-5-ozet.pdf` |
+| 6 | Redis, MCP, API | 6.1 Redis ziyaretçi hafızası (n8n yeniden başlasa da, sayfa yenilense de hatırlıyor; #50–54); 6.2 n8n MCP Claude Code'a bağlandı, chatbot MCP'den çalıştırıldı (#95); 6.3 API ile haftalık sipariş sorgusu (16–22.11: 3 sipariş / 6 adet, 1 stok bildirimi, 4 başarısız). Google Sheets OAuth düşmüştü, yeniden bağlandı |
